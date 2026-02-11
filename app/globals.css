@@ -1,26 +1,117 @@
 @import "tailwindcss";
 
+/* ============================================
+   NexVault — Design System Tokens
+   ============================================ */
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Background Colors */
+  --bg-primary: #020408; /* Richer Black */
+  --bg-secondary: #050810;
+  --bg-card: #0a0e1a;
+  --bg-badge: #0a1310;
+
+  /* Accent Colors */
+  --accent-green: #a3f0c1; /* Minty Neon Green */
+  --accent-green-hover: #8ee0b0;
+  --accent-green-dim: #132a1e;
+
+  /* Text Colors */
+  --text-primary: #FFFFFF;
+  --text-secondary: #94A3B8;
+  --text-muted: #64748B;
+  --text-dim: #475569;
+
+  /* Border Colors */
+  --border-subtle: rgba(255, 255, 255, 0.05);
+  --border-green: #a3f0c1;
+
+  /* Sizing */
+  --nav-height: 90px;
+  --sidebar-width: 280px;
+  --sidebar-collapsed: 80px;
+  --container-max: 1200px;
+  --container-padding: 32px;
+
+  /* Dashboard Colors */
+  --dash-bg: #0A0D14;
+  --dash-surface: #141822;
+  --dash-border: rgba(255, 255, 255, 0.08);
+  --dash-accent: #A3F0C1;
+  --dash-error: #F0A3A3;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+  --color-bg-primary: var(--bg-primary);
+  --color-bg-secondary: var(--bg-secondary);
+  --color-bg-card: var(--bg-card);
+  --color-bg-badge: var(--bg-badge);
+  --color-accent-green: var(--accent-green);
+  --color-accent-green-hover: var(--accent-green-hover);
+  --color-accent-green-dim: var(--accent-green-dim);
+  --color-text-primary: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-muted: var(--text-muted);
+  --color-text-dim: var(--text-dim);
+  --color-border-subtle: var(--border-subtle);
+  --color-border-green: var(--border-green);
+  --color-dash-bg: var(--dash-bg);
+  --color-dash-surface: var(--dash-surface);
+  --color-dash-accent: var(--dash-accent);
+  --color-dash-error: var(--dash-error);
+  --font-sans: var(--font-inter);
+  --font-outfit: var(--font-outfit);
+  --font-space: var(--font-space);
+  --font-pacifico: var(--font-pacifico);
+  --letter-spacing-tight: -0.02em;
+  /* Animations */
+  --animate-scroll: scroll 25s linear infinite;
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+  @keyframes scroll {
+    from { transform: translateX(0); }
+    to { transform: translateX(-50%); }
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+/* ============================================
+   Base Styles — Tailwind v4 Preflight handles resets
+   ============================================ */
+
+html {
+  scroll-behavior: smooth;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
+
+body {
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: var(--font-inter), 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  line-height: 1.6;
+  overflow-x: hidden;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-primary);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--accent-green-dim);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--accent-green);
+}
+
+/* Selection */
+::selection {
+  background: rgba(47, 210, 110, 0.3);
+  color: var(--text-primary);
+}
+
