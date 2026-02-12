@@ -8,7 +8,7 @@ export async function GET(request: Request) {
   const token = searchParams.get('token')
   const type = searchParams.get('type') as EmailOtpType | null
   const email = searchParams.get('email')
-  const next = searchParams.get('next') ?? '/'
+  const next = searchParams.get('next') ?? '/dashboard'
 
   const supabase = await createClient()
 
