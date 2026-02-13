@@ -68,22 +68,22 @@ export default function Topbar() {
   };
 
   return (
-    <header className="h-[80px] sm:h-[90px] w-full flex items-center justify-between px-4 sm:px-8 bg-dash-bg/40 backdrop-blur-2xl sticky top-0 z-40 transition-all border-b border-dash-border/30">
+    <header className="h-[70px] sm:h-[90px] w-full flex items-center justify-between px-3 sm:px-8 bg-dash-bg/40 backdrop-blur-2xl sticky top-0 z-40 transition-all border-b border-dash-border/30">
       {/* Left Section: Mobile Toggle & Logo */}
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-2 sm:gap-4">
         <button 
             onClick={toggle}
-            className="p-2 text-text-muted hover:text-white bg-white/5 rounded-xl border border-white/5 transition-all active:scale-95 shadow-sm"
+            className="p-1.5 sm:p-2 text-text-muted hover:text-white bg-white/5 rounded-xl border border-white/5 transition-all active:scale-95 shadow-sm"
         >
-            <Menu size={20} />
+            <Menu size={18} className="sm:w-[20px] sm:h-[20px]" />
         </button>
 
         {/* Mobile Logo */}
-        <div className="lg:hidden flex items-center gap-2">
-            <ShieldCheck className="text-dash-accent" size={24} />
+        <div className="lg:hidden flex items-center gap-1 sm:gap-2">
+            <ShieldCheck className="text-dash-accent shrink-0" size={20} />
             <div className="flex items-center">
-                <span className="font-pacifico text-[18px] text-dash-accent">Provest</span>
-                <span className="font-outfit text-[18px] font-bold text-white -ml-0.5">Markets</span>
+                <span className="font-pacifico text-[16px] sm:text-[18px] text-dash-accent">Provest</span>
+                <span className="font-outfit text-[16px] sm:text-[18px] font-bold text-white -ml-0.5 hidden xs:inline">Markets</span>
             </div>
         </div>
 
@@ -107,7 +107,7 @@ export default function Topbar() {
             </button>
           )}
 
-          {/* Search Results Dropdown */}
+          {/* Search Results Dropdown remains same... */}
           <AnimatePresence>
             {showResults && (
               <motion.div 
@@ -128,7 +128,7 @@ export default function Topbar() {
                             <button
                                 key={coin.id}
                                 onClick={() => handleSelectCoin(coin.id)}
-                                className="w-full flex items-center justify-between p-3 rounded-xl hover:bg-white/5 transition-all group group"
+                                className="w-full flex items-center justify-between p-3 rounded-xl hover:bg-white/5 transition-all group"
                             >
                                 <div className="flex items-center gap-3">
                                     <div className="w-8 h-8 relative">
@@ -172,35 +172,34 @@ export default function Topbar() {
       </div>
 
       {/* Right Actions */}
-      <div className="flex items-center gap-4 sm:gap-6">
-        <div className="flex flex-col items-end pr-4 border-r border-dash-border/30">
-            <span className="text-[9px] text-text-muted font-bold uppercase tracking-[0.15em] mb-1 opacity-60">Balance</span>
-            <span className="text-sm sm:text-base font-bold text-white font-mono tracking-tight">
+      <div className="flex items-center gap-2 sm:gap-6">
+        <div className="flex flex-col items-end pr-2 sm:pr-4 border-r border-dash-border/30">
+            <span className="text-[8px] sm:text-[9px] text-text-muted font-bold uppercase tracking-[0.15em] mb-0.5 sm:mb-1 opacity-60 hidden xs:block">Balance</span>
+            <span className="text-xs sm:text-base font-bold text-white font-mono tracking-tight">
                 ${totalUsdBalance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </span>
         </div>
 
         <Link href="/dashboard/wallets">
-          <button className="flex items-center gap-2 px-3 sm:px-5 py-2 sm:py-2.5 bg-dash-accent text-bg-primary rounded-full font-bold text-sm hover:shadow-lg hover:shadow-dash-accent/20 transition-all active:scale-95">
-            <Plus size={16} />
-            <span className="hidden sm:inline">Fund Wallet</span>
+          <button className="flex items-center gap-2 px-2 sm:px-5 py-1.5 sm:py-2.5 bg-dash-accent text-bg-primary rounded-full font-bold text-xs sm:text-sm hover:shadow-lg hover:shadow-dash-accent/20 transition-all active:scale-95">
+            <Plus size={14} className="sm:w-[16px] sm:h-[16px]" />
+            <span className="hidden xs:inline">Fund</span>
+            <span className="hidden sm:inline">Wallet</span>
           </button>
         </Link>
 
-        <div className="h-10 w-px bg-dash-border" />
-
         {/* Profile */}
-        <Link href="/dashboard/profile" className="flex items-center gap-3 pl-2 cursor-pointer group">
-          <div className="w-10 h-10 rounded-full border border-dash-accent/30 overflow-hidden group-hover:border-dash-accent transition-all relative">
+        <Link href="/dashboard/profile" className="flex items-center gap-2 sm:gap-3 pl-1 sm:pl-2 cursor-pointer group">
+          <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full border border-dash-accent/30 overflow-hidden group-hover:border-dash-accent transition-all relative">
              <Image 
                 src={avatarUrl} 
                 alt="Profile" 
                 fill 
                 className="object-cover"
-                sizes="40px"
+                sizes="(max-width: 640px) 32px, 40px"
              />
           </div>
-          <div className="hidden sm:block text-left">
+          <div className="hidden md:block text-left">
             <p className="text-sm font-bold text-white font-outfit leading-none">{fullName}</p>
           </div>
         </Link>
