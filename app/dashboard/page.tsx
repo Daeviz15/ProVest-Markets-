@@ -7,8 +7,10 @@ import BalanceChart from './components/BalanceChart';
 import MarketsOverview from './components/MarketsOverview';
 import QuickTrade from './components/QuickTrade';
 import PaymentHistory from './components/PaymentHistory';
+import { useBalance } from './context/BalanceContext';
 
 export default function DashboardPage() {
+  const { totalUsdBalance } = useBalance();
   const [selectedCoin, setSelectedCoin] = useState({ id: 'bitcoin', symbol: 'btc', name: 'Bitcoin' });
   const [timeRange, setTimeRange] = useState('7'); // days
 

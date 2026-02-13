@@ -162,7 +162,7 @@ export default function Benefits() {
                   <div key={i} className="flex items-center justify-between group/asset">
                     <div className="flex items-center gap-4">
                       <div className="w-12 h-12 rounded-full bg-white/5 border border-white/5 flex items-center justify-center p-1.5 overflow-hidden group-hover/asset:border-accent-green/30 transition-colors relative">
-                        {/* Inner Aura */}
+                        {/* Inner Provest Glow */}
                         <div className="absolute inset-0 bg-gradient-to-tr from-accent-green/20 to-transparent opacity-0 group-hover/asset:opacity-100 transition-opacity" />
                         <img
                           src={coin.icon}

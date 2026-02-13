@@ -97,10 +97,10 @@ export default function Footer() {
               </div>
               <div className="flex items-center transform translate-y-1">
                 <span className="font-pacifico text-[26px] font-normal tracking-wide bg-gradient-to-t from-accent-green from-[35%] to-white to-[35%] bg-clip-text text-transparent">
-                  Aura
+                  Provest
                 </span>
                 <span className="font-outfit text-[26px] font-bold tracking-tight text-white mb-1 -ml-1.5">
-                  Trade
+                  Markets
                 </span>
               </div>
             </div>
@@ -175,7 +175,7 @@ export default function Footer() {
           className="pt-12 border-t border-white/5 flex flex-col sm:flex-row items-center justify-between gap-6"
         >
           <p className="text-white/20 text-[14px]">
-            © {currentYear} AuraTrade Technologies Ltd. All rights reserved.
+            © {currentYear} ProvestMarkets Technologies Ltd. All rights reserved.
           </p>
           <div className="flex items-center gap-8 text-white/20 text-[14px]">
             <a href="#" className="hover:text-white transition-colors">Privacy Policy</a>

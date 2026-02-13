@@ -54,8 +54,8 @@ export default function SignUp() {
         <div className="flex-1 p-8 sm:p-12 lg:p-16 flex flex-col">
           {/* Logo Area */}
           <div className="flex items-center gap-0 mb-12 sm:mb-16">
-            <span className="text-accent-green text-[28px] font-pacifico -mr-1">Aura</span>
-            <span className="text-white text-[28px] font-bold font-outfit">Trade</span>
+            <span className="text-accent-green text-[28px] font-pacifico -mr-1">Provest</span>
+            <span className="text-white text-[28px] font-bold font-outfit">Markets</span>
           </div>
 
           <motion.div variants={fadeInUp} initial="hidden" animate="visible">
@@ -231,7 +231,7 @@ export default function SignUp() {
               transition={{ delay: 0.5, duration: 0.8 }}
             >
               <h2 className="text-white text-[32px] font-bold mb-4 leading-tight">
-                Hello! Welcome to the <br /> <span className="text-accent-green">AuraTrade</span> platform
+                Hello! Welcome to the <br /> <span className="text-accent-green">ProvestMarkets</span> platform
               </h2>
               <p className="text-white/40 text-[16px] mb-10 font-sans">
                 If you already have an account
@@ -247,7 +247,7 @@ export default function SignUp() {
             </motion.div>
           </div>
 
-          {/* Abstract Aura Shapes */}
+          {/* Abstract Provest Shapes */}
           <div className="absolute top-[20%] right-[-10%] w-[300px] h-[300px] bg-accent-green/10 blur-[100px] rounded-full" />
           <div className="absolute bottom-[-5%] left-[-10%] w-[250px] h-[250px] bg-accent-green/5 blur-[80px] rounded-full" />
         </div>

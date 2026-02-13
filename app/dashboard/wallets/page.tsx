@@ -18,11 +18,18 @@ import Image from 'next/image';
 import { getMarkets, CoinMarketData } from '@/lib/crypto';
 import Sparkline from '../components/Sparkline';
 import { motion } from 'motion/react';
+import { useBalance } from '../context/BalanceContext';
 
 export default function WalletPage() {
   const [coins, setCoins] = useState<CoinMarketData[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+  const { balances, getSymbolBalance } = useBalance();
+
+  const totalBalanceUsd = balances.reduce((acc, curr) => {
+    const coin = coins.find(c => c.symbol.toLowerCase() === curr.coin_symbol.toLowerCase());
+    return acc + (curr.balance * (coin?.current_price || 0));
+  }, 0);
 
   useEffect(() => {
     const fetchAssets = async () => {
@@ -49,8 +56,8 @@ export default function WalletPage() {
     <div className="space-y-6 sm:space-y-8 max-w-[1600px] mx-auto pb-12 font-outfit px-3 sm:px-4 lg:px-6">
       
       {/* Header */}
-      <div className="flex items-center justify-between pt-4">
-        <h1 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">Wallet</h1>
+      <div className="flex items-center justify-between mb-8 sm:mb-12">
+          <h1 className="text-3xl sm:text-5xl font-black text-white tracking-tight font-outfit">Portfolio</h1>
         <div className="flex gap-3">
              <button className="p-2 sm:p-2.5 rounded-full bg-white/5 hover:bg-white/10 text-white transition-colors border border-white/5">
                 <Search size={20} />
@@ -68,18 +75,14 @@ export default function WalletPage() {
           <div className="absolute bottom-0 left-0 w-48 h-48 bg-black/10 rounded-full blur-2xl translate-y-1/2 -translate-x-1/4" />
           
           <div className="relative z-10 text-center sm:text-left">
-              <div className="flex items-center justify-center sm:justify-start gap-2 text-white/80 mb-2">
-                  <span className="text-sm font-bold tracking-wide">Estimated Balance</span>
-                  <div className="bg-white/20 rounded-full p-0.5 cursor-help">
-                      <div className="w-3 h-3 text-[10px] flex items-center justify-center font-serif italic font-bold">i</div>
-                  </div>
-              </div>
-              <h2 className="text-4xl sm:text-5xl font-bold text-white tracking-tight mb-8 drop-shadow-sm font-mono">$0.00</h2>
+              <h2 className="text-4xl sm:text-5xl font-bold text-white tracking-tight mb-8 drop-shadow-sm font-mono">
+                ${totalBalanceUsd.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              </h2>
               
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 max-w-3xl">
                   {[
                       { label: 'Deposit', icon: ArrowDownLeft, href: '/dashboard/deposit' },
-                      { label: 'Transfer', icon: Send, href: '#' },
+                      { label: 'Transfer', icon: Send, href: '/dashboard/transfer' },
                       { label: 'Exchange', icon: RefreshCw, href: '/dashboard/trade' },
                       { label: 'Withdraw', icon: Download, href: '/dashboard/withdraw' }
                   ].map((action) => (
@@ -141,12 +144,8 @@ export default function WalletPage() {
               ) : (
                   filteredCoins.map((coin) => {
                       const isPositive = (coin.price_change_percentage_24h || 0) >= 0;
-                      // Generate a realistic looking 'balance' based on coin rank just for demo visualization since no dummy content allowed usually implies 'lorem ipsum', but visual placeholders for UI dev are needed.
-                      // Ideally this would be 0 if strictly no dummy data, but design showed balances.
-                      // I will use 0 for "Real" feel if user has no data, or small random amounts if demonstrating UI. 
-                      // User said "no dummy contents". So 0.00 is safest/most professional for a new account.
-                      const balance = 0.00;
-                      const balanceUsd = 0.00;
+                      const balance = getSymbolBalance(coin.symbol);
+                      const balanceUsd = balance * coin.current_price;
 
                       return (
                           <motion.div 

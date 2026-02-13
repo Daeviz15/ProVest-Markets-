@@ -56,8 +56,8 @@ export default function SignIn() {
           <div className="relative z-10 w-full h-full flex flex-col items-center justify-center p-12 text-center">
             {/* Logo Area */}
             <div className="flex items-center gap-0 mb-12">
-              <span className="text-accent-green text-[28px] font-pacifico -mr-1">Aura</span>
-              <span className="text-white text-[28px] font-bold font-outfit">Trade</span>
+              <span className="text-accent-green text-[28px] font-pacifico -mr-1">Provest</span>
+              <span className="text-white text-[28px] font-bold font-outfit">Markets</span>
             </div>
 
             <motion.div 
@@ -88,7 +88,7 @@ export default function SignIn() {
             </motion.div>
           </div>
 
-          {/* Abstract Aura Shapes */}
+          {/* Abstract Provest Shapes */}
           <div className="absolute top-[-10%] left-[-10%] w-[250px] h-[250px] bg-accent-green/5 blur-[80px] rounded-full" />
           <div className="absolute bottom-[-10%] right-[-10%] w-[250px] h-[250px] bg-accent-green/5 blur-[80px] rounded-full" />
         </div>

@@ -1,9 +1,15 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { ChevronDown, RefreshCw } from 'lucide-react';
+import { ChevronDown, RefreshCw, ArrowUpRight } from 'lucide-react';
 import Image from 'next/image';
+import Link from 'next/link';
 import { getTopCoins, CoinMarketData } from '@/lib/crypto';
+import { useBalance } from '../context/BalanceContext';
+import { useNotification } from '../context/NotificationContext';
+import { supabase } from '@/lib/supabase';
+import { useUser } from '../context/UserContext';
+import { useLoading } from '../context/LoadingContext';
 
 export default function QuickTrade() {
   const [side, setSide] = useState('buy');
@@ -12,6 +18,12 @@ export default function QuickTrade() {
   const [receiveCoin, setReceiveCoin] = useState<CoinMarketData | null>(null);
   const [amount, setAmount] = useState<string>('');
   const [loading, setLoading] = useState(true);
+  const { getSymbolBalance, refreshBalances, totalUsdBalance } = useBalance();
+  const { addNotification } = useNotification();
+  const { user } = useUser();
+  const { setIsLoading } = useLoading();
+
+  const currentBalance = side === 'buy' ? totalUsdBalance : (spendCoin ? getSymbolBalance(spendCoin.symbol) : 0);
 
   useEffect(() => {
     const loadCoins = async () => {
@@ -35,6 +47,59 @@ export default function QuickTrade() {
   const receiveAmount = (spendCoin && receiveCoin && amount && !isNaN(parseFloat(amount))) 
     ? (parseFloat(amount) * spendCoin.current_price / receiveCoin.current_price).toFixed(6)
     : '0';
+
+  const handleExecute = async () => {
+    const spendAmount = parseFloat(amount);
+    if (!spendAmount || isNaN(spendAmount) || !spendCoin || !receiveCoin || !user) return;
+
+    if (spendAmount > currentBalance) {
+      addNotification(`Insufficient ${spendCoin.symbol.toUpperCase()} balance.`, 'error');
+      return;
+    }
+
+    setIsLoading(true, `Executing Quick ${side.toUpperCase()} Order`);
+
+    try {
+        const receiveAmountNum = parseFloat(receiveAmount);
+        
+        // 1. Update/Add balances
+        // For QuickTrade, we always assume the 'quote' is the spend coin if selling, or quote is what we spend if buying
+        // Actually, let's keep it simple: swap balances directly
+        
+        const { data: spendWallet } = await supabase.from('wallets').select('*').eq('user_id', user.id).eq('coin_symbol', spendCoin.symbol.toLowerCase()).single();
+        const { data: receiveWallet } = await supabase.from('wallets').select('*').eq('user_id', user.id).eq('coin_symbol', receiveCoin.symbol.toLowerCase()).single();
+
+        // Deduct from spend
+        await supabase.from('wallets').update({ balance: (spendWallet?.balance || 0) - spendAmount }).eq('user_id', user.id).eq('coin_symbol', spendCoin.symbol.toLowerCase());
+        
+        // Add to receive
+        if (receiveWallet) {
+            await supabase.from('wallets').update({ balance: receiveWallet.balance + receiveAmountNum }).eq('user_id', user.id).eq('coin_symbol', receiveCoin.symbol.toLowerCase());
+        } else {
+            await supabase.from('wallets').insert({ user_id: user.id, coin_symbol: receiveCoin.symbol.toLowerCase(), balance: receiveAmountNum });
+        }
+
+        // 2. Log Trade
+        await supabase.from('trades').insert({
+            user_id: user.id,
+            coin_symbol: receiveCoin.symbol.toLowerCase(),
+            coin_name: receiveCoin.name,
+            type: side as 'buy' | 'sell',
+            amount_usd: side === 'buy' ? spendAmount : receiveAmountNum * receiveCoin.current_price, // roughly
+            amount_coin: receiveAmountNum,
+            price_at_execution: receiveCoin.current_price
+        });
+
+        await refreshBalances();
+        addNotification(`Quick ${side.toUpperCase()} executed successfully!`, 'success');
+        setAmount('');
+    } catch (error) {
+        console.error('Quick Trade execution failed:', error);
+        addNotification('Execution failed. Please try again.', 'error');
+    } finally {
+        setIsLoading(false);
+    }
+  };
 
   return (
     <div className="bg-[#0C101A] rounded-[32px] p-8 h-full shadow-2xl">
@@ -65,7 +130,12 @@ export default function QuickTrade() {
         <div className="space-y-2">
             <div className="flex justify-between text-[11px] text-text-muted uppercase font-space tracking-wider px-1">
                 <span>{side === 'buy' ? 'Spend' : 'Sell'}</span>
-                <span>Balance: 0.00</span>
+                <div className="flex items-center gap-2">
+                    <span>Balance: {side === 'buy' ? '$' : ''}{currentBalance.toLocaleString(undefined, { maximumFractionDigits: side === 'buy' ? 2 : 6 })}</span>
+                    <Link href="/dashboard/wallets" className="text-dash-accent hover:text-white flex items-center gap-0.5 transition-colors">
+                        Portfolio <ArrowUpRight size={10} />
+                    </Link>
+                </div>
             </div>
             <div className="relative group">
                 <input 
@@ -132,6 +202,7 @@ export default function QuickTrade() {
 
         <button 
             disabled={!amount || loading}
+            onClick={handleExecute}
             className={`w-full py-4 rounded-2xl font-bold text-[15px] transition-all transform active:scale-95 shadow-lg mt-4 disabled:opacity-50 disabled:cursor-not-allowed ${
             side === 'buy' ? 'bg-dash-accent text-bg-primary hover:bg-white' : 'bg-dash-error text-bg-primary hover:bg-white'
         }`}>

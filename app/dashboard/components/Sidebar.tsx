@@ -1,6 +1,7 @@
 "use client";
 
 import { useSidebar } from '../context/SidebarContext';
+import { useUser } from '../context/UserContext';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { motion } from 'motion/react';
@@ -33,9 +34,9 @@ const navGroups = [
     ]
   },
   {
-    title: 'WALLETS',
+    title: 'PORTFOLIO',
     items: [
-      { icon: Wallet, label: 'My Wallets', href: '/dashboard/wallets' },
+      { icon: Wallet, label: 'My Portfolio', href: '/dashboard/wallets' },
       { icon: Plus, label: 'Deposit', href: '/dashboard/deposit' },
       { icon: ArrowRight, label: 'Withdraw', href: '/dashboard/withdraw' },
     ]
@@ -68,6 +69,7 @@ const navGroups = [
 export default function Sidebar() {
   const pathname = usePathname();
   const { isOpen, close } = useSidebar();
+  const { logout } = useUser();
 
   return (
     <aside className={`fixed left-0 top-0 bottom-0 bg-[#07090F] flex flex-col transition-all duration-500 z-[60] shadow-[20px_0_40px_rgba(0,0,0,0.3)] w-[280px] lg:w-[var(--sidebar-width)]
@@ -80,8 +82,8 @@ export default function Sidebar() {
                 <ShieldCheck className="text-dash-accent" size={26} />
             </div>
             <div className="flex items-center transform translate-y-0.5">
-                <span className="font-pacifico text-[22px] text-dash-accent">Aura</span>
-                <span className="font-outfit text-[22px] font-bold text-white -ml-0.5">Trade</span>
+                <span className="font-pacifico text-[22px] text-dash-accent">Provest</span>
+                <span className="font-outfit text-[22px] font-bold text-white -ml-0.5">Markets</span>
             </div>
         </div>
         <button 
@@ -136,7 +138,7 @@ export default function Sidebar() {
       <div className="w-full px-4 py-6 border-t border-dash-border">
         <button 
           className="flex items-center gap-4 px-4 py-3 rounded-xl w-full text-dash-error hover:bg-dash-error/5 transition-all group"
-          onClick={() => {/* Implement Logout */}}
+          onClick={logout}
         >
           <LogOut size={18} />
           <span className="font-outfit text-[14px] font-medium">Log out</span>

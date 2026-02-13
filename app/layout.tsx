@@ -27,9 +27,9 @@ const pacifico = Pacifico({
 });
 
 export const metadata: Metadata = {
-  title: "AuraTrade — Fast & Secure Cryptocurrency Exchange",
+  title: "ProvestMarkets — Fast & Secure Cryptocurrency Exchange",
   description:
-    "Trade cryptocurrencies with ease, security, and advanced features on our cutting-edge platform. AuraTrade is the future of crypto trading.",
+    "Trade cryptocurrencies with ease, security, and advanced features on our cutting-edge platform. ProvestMarkets is the future of crypto trading.",
 };
 
 export default function RootLayout({

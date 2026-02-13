@@ -46,10 +46,10 @@ export default function Navbar() {
           </div>
           <div className="flex items-center transform translate-y-1">
             <span className="font-pacifico text-[26px] font-normal tracking-wide bg-gradient-to-t from-accent-green from-[35%] to-white to-[35%] bg-clip-text text-transparent">
-              Aura
+              Provest
             </span>
             <span className="font-outfit text-[26px] font-bold tracking-tight text-white mb-1 -ml-1.5">
-              Trade
+              Markets
             </span>
           </div>
         </Link>

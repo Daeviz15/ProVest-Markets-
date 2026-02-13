@@ -12,16 +12,21 @@ import {
   Check,
   ChevronRight,
   LogOut,
-  Settings
+  Settings,
+  ShieldAlert,
+  X
 } from 'lucide-react';
 import Image from 'next/image';
 import { useUser } from '../context/UserContext';
 import { useLoading } from '../context/LoadingContext';
+import { useNotification } from '../context/NotificationContext';
 import { supabase } from '@/lib/supabase';
+import Link from 'next/link';
 
 export default function ProfilePage() {
-  const { user, refreshUser, setUser } = useUser();
+  const { user, refreshUser, setUser, logout } = useUser();
   const { setIsLoading } = useLoading();
+  const { addNotification } = useNotification();
   const [copied, setCopied] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -35,9 +40,9 @@ export default function ProfilePage() {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const handleUploadClick = () => {
-      fileInputRef.current?.click();
-  };
+    const showNotification = (message: string, type: 'success' | 'error' = 'success') => {
+        addNotification(message, type);
+    };
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -80,17 +85,23 @@ export default function ProfilePage() {
         // 4. Update local context state immediately for instant feedback
         if (updatedUser) {
             setUser(updatedUser);
+            showNotification("Profile picture updated successfully!", "success");
         }
     } catch (error: any) {
         console.error("Upload failed", error);
-        alert(error.message || "Failed to upload image");
+        showNotification(error.message || "Failed to upload image", "error");
     } finally {
         setIsLoading(false);
     }
   };
 
+  const handleUploadClick = () => {
+    fileInputRef.current?.click();
+  };
+
   return (
-    <div className="max-w-5xl mx-auto pb-20 font-outfit px-2 sm:px-4">
+    <div className="max-w-5xl mx-auto pb-20 font-outfit px-2 sm:px-4 relative">
+
       {/* 1. Cover & Profile Header Section */}
       <motion.div 
         initial={{ opacity: 0, y: 20 }}
@@ -221,12 +232,8 @@ export default function ProfilePage() {
                 { 
                   label: 'KYC Status', 
                   status: user?.user_metadata?.kyc_status || 'Unverified', 
-                  color: user?.user_metadata?.kyc_status === 'Verified' ? 'text-dash-accent' : 'text-amber-500' 
-                },
-                { 
-                  label: 'Two-Factor Auth', 
-                  status: (user?.factors && user.factors.length > 0) ? 'Enabled' : 'Not Enabled', 
-                  color: (user?.factors && user.factors.length > 0) ? 'text-dash-accent' : 'text-amber-500' 
+                  color: user?.user_metadata?.kyc_status === 'Verified' ? 'text-dash-accent' : 'text-amber-500',
+                  href: '/dashboard/kyc'
                 },
                 { 
                   label: 'Account Level', 
@@ -234,10 +241,24 @@ export default function ProfilePage() {
                   color: 'text-white' 
                 }
               ].map((item) => (
-                <div key={item.label} className="flex items-center justify-between py-4 border-b border-white/5 last:border-0">
-                  <span className="text-text-muted font-medium">{item.label}</span>
-                  <span className={`font-bold ${item.color}`}>{item.status}</span>
-                </div>
+                item.href ? (
+                  <Link 
+                    href={item.href}
+                    key={item.label} 
+                    className="flex items-center justify-between py-4 border-b border-white/5 last:border-0 hover:bg-white/[0.02] -mx-4 px-4 rounded-xl transition-colors group"
+                  >
+                    <span className="text-text-muted font-medium">{item.label}</span>
+                    <div className="flex items-center gap-3">
+                      <span className={`font-bold ${item.color}`}>{item.status}</span>
+                      <ChevronRight size={16} className="text-white/10 group-hover:text-dash-accent transition-all" />
+                    </div>
+                  </Link>
+                ) : (
+                  <div key={item.label} className="flex items-center justify-between py-4 border-b border-white/5 last:border-0">
+                    <span className="text-text-muted font-medium">{item.label}</span>
+                    <span className={`font-bold ${item.color}`}>{item.status}</span>
+                  </div>
+                )
               ))}
             </div>
           </motion.div>
@@ -265,21 +286,39 @@ export default function ProfilePage() {
             className="bg-[#0C101A] border border-white/5 rounded-[32px] p-3 shadow-xl"
           >
             {[
-              { icon: Settings, label: 'Account Settings', href: '#' },
-              { icon: LogOut, label: 'Sign Out', href: '/auth/signout', color: 'text-red-500' }
+              { icon: Settings, label: 'Account Settings', href: '/dashboard/settings' },
+              { icon: LogOut, label: 'Sign Out', onClick: logout, color: 'text-red-500' }
             ].map((link) => (
-              <button 
-                key={link.label}
-                className="w-full flex items-center justify-between p-5 hover:bg-white/[0.03] rounded-2xl transition-all group"
-              >
-                <div className="flex items-center gap-4">
-                  <div className={`p-2.5 rounded-xl bg-white/5 ${link.color || 'text-white/60'} group-hover:text-dash-accent transition-colors`}>
-                    <link.icon size={20} />
-                  </div>
-                  <span className={`font-bold text-sm ${link.color || 'text-white/80'}`}>{link.label}</span>
-                </div>
-                <ChevronRight size={18} className="text-white/10 group-hover:text-dash-accent transition-all group-hover:translate-x-1" />
-              </button>
+              <div key={link.label} className="block w-full">
+                {link.href ? (
+                  <Link href={link.href} className="block w-full">
+                    <button 
+                      className="w-full flex items-center justify-between p-5 hover:bg-white/[0.03] rounded-2xl transition-all group text-left"
+                    >
+                      <div className="flex items-center gap-4">
+                        <div className={`p-2.5 rounded-xl bg-white/5 ${link.color || 'text-white/60'} group-hover:text-dash-accent transition-colors`}>
+                          <link.icon size={20} />
+                        </div>
+                        <span className={`font-bold text-sm ${link.color || 'text-white/80'}`}>{link.label}</span>
+                      </div>
+                      <ChevronRight size={18} className="text-white/10 group-hover:text-dash-accent transition-all group-hover:translate-x-1" />
+                    </button>
+                  </Link>
+                ) : (
+                  <button 
+                    onClick={link.onClick}
+                    className="w-full flex items-center justify-between p-5 hover:bg-white/[0.03] rounded-2xl transition-all group text-left"
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className={`p-2.5 rounded-xl bg-white/5 ${link.color || 'text-white/60'} group-hover:text-dash-accent transition-colors`}>
+                        <link.icon size={20} />
+                      </div>
+                      <span className={`font-bold text-sm ${link.color || 'text-white/80'}`}>{link.label}</span>
+                    </div>
+                    <ChevronRight size={18} className="text-white/10 group-hover:text-dash-accent transition-all group-hover:translate-x-1" />
+                  </button>
+                )}
+              </div>
             ))}
           </motion.nav>
         </div>

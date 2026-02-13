@@ -76,8 +76,8 @@ export default function Contact() {
 
             <div className="flex flex-col gap-6">
               {[
-                { label: "Institutional Inquiries", value: "institutional@auratrade.io" },
-                { label: "Technical Support", value: "dev-support@auratrade.io" }
+                { label: "Institutional Inquiries", value: "institutional@provestmarkets.com" },
+                { label: "Technical Support", value: "dev-support@provestmarkets.com" }
               ].map((info, i) => (
                 <div key={i} className="flex flex-col gap-1">
                   <span className="text-white/20 text-[12px] font-space font-bold uppercase tracking-widest">{info.label}</span>

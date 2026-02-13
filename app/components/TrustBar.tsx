@@ -26,7 +26,7 @@ export default function TrustBar() {
             className="flex items-center gap-4 px-12 opacity-40 hover:opacity-100 transition-opacity duration-300 transition-all group"
           >
             <div className="w-10 h-10 rounded-full flex items-center justify-center overflow-hidden bg-white/5 border border-white/10 group-hover:border-white/20 p-1.5 transition-all relative">
-              {/* Brand Aura Glow */}
+              {/* Brand Provest Glow */}
               <div 
                 className="absolute inset-2 blur-md opacity-0 group-hover:opacity-40 transition-opacity duration-500 rounded-full pointer-events-none"
                 style={{ backgroundColor: crypto.color }}

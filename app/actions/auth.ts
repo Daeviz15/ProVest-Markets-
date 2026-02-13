@@ -50,15 +50,15 @@ export async function signUp(formData: FormData) {
   // 2. Send custom verification email with Resend
   try {
     await resend.emails.send({
-      from: 'AuraTrade <notifications@provestmarkets.com>',
+      from: 'ProvestMarkets <notifications@provestmarkets.com>',
       to: email,
-      subject: 'Verify your AuraTrade account',
+      subject: 'Verify your ProvestMarkets account',
       html: `
         <div style="font-family: sans-serif; background: #020408; color: #fff; padding: 40px; border-radius: 20px;">
-          <h1 style="color: #a3f0c1; margin-bottom: 20px;">AuraTrade</h1>
+          <h1 style="color: #a3f0c1; margin-bottom: 20px;">ProvestMarkets</h1>
           <p style="font-size: 16px; margin-bottom: 20px;">Hello ${fullName},</p>
           <p style="font-size: 16px; margin-bottom: 30px; color: #cbd5e1;">
-            Thank you for choosing AuraTrade for your institutional trading needs.
+            Thank you for choosing ProvestMarkets for your institutional trading needs.
             Please verify your email to access your secure dashboard.
           </p>
           <a href="${localVerificationLink}" 

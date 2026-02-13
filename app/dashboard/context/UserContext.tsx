@@ -9,6 +9,7 @@ interface UserContextType {
   loading: boolean;
   refreshUser: () => Promise<void>;
   setUser: (user: User | null) => void;
+  logout: () => Promise<void>;
 }
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
@@ -46,8 +47,23 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     await fetchUser();
   };
 
+  const logout = async () => {
+    try {
+      setLoading(true);
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+      setUser(null);
+      // Immediate redirection
+      window.location.href = '/';
+    } catch (error) {
+      console.error('Logout error:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
-    <UserContext.Provider value={{ user, loading, refreshUser, setUser }}>
+    <UserContext.Provider value={{ user, loading, refreshUser, setUser, logout }}>
       {children}
     </UserContext.Provider>
   );

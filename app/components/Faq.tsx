@@ -5,19 +5,19 @@ import { motion, AnimatePresence, Variants } from "motion/react";
 
 const faqData = [
   {
-    question: "What makes AuraTrade institutional-grade?",
+    question: "What makes ProvestMarkets institutional-grade?",
     answer: "Our platform is built on an LMAX-style matching engine with sub-millisecond latency. We provide SOC2 Type II compliant custody, institutional-only liquidity pools, and white-glove support for high-volume trading accounts."
   },
   {
     question: "How secure are my digital assets?",
-    answer: "AuraTrade employs a multi-layer security architecture including FIPS 140-2 Level 3 hardware security modules, multi-party computation (MPC) for key management, and 100% insurance coverage on cold storage holdings."
+    answer: "ProvestMarkets employs a multi-layer security architecture including FIPS 140-2 Level 3 hardware security modules, multi-party computation (MPC) for key management, and 100% insurance coverage on cold storage holdings."
   },
   {
     question: "What are the API rate limits?",
     answer: "We offer tiered API access. Standard accounts start at 100 requests/sec, while our institutional 'Elite' tier provides dedicated endpoints with customized rate limits and WebSocket support for low-latency market data."
   },
   {
-    question: "Does AuraTrade support fiat on-ramps?",
+    question: "Does ProvestMarkets support fiat on-ramps?",
     answer: "Yes, we support instant fiat settlement for USD, EUR, and GBP via SEPA, SWIFT, and FedWire. Our liquidity bridge ensures zero slippage for large fiat-to-crypto conversions."
   }
 ];

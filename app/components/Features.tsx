@@ -123,7 +123,7 @@ export default function Features() {
               transition={{ delay: idx * 0.1 }}
               className="group relative p-8 rounded-[32px] bg-[#0A0E1A]/40 backdrop-blur-md border border-white/[0.05] hover:border-accent-green/30 transition-all duration-500 hover:-translate-y-2 overflow-hidden shadow-xl"
             >
-              {/* Card Aura Background */}
+              {/* Card Provest Background */}
               <div className="absolute inset-0 bg-gradient-to-br from-accent-green/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
               
               <div className="relative z-10 flex flex-col items-start gap-12">
@@ -132,7 +132,7 @@ export default function Features() {
                 </span>
                 
                 <div className="w-12 h-12 rounded-full overflow-hidden flex items-center justify-center bg-white/5 border border-white/5 group-hover:border-white/10 p-2 transition-all duration-500 group-hover:scale-110 group-hover:shadow-[0_0_20px_rgba(163,240,193,0.05)] relative">
-                  {/* Brand Aura Glow */}
+                  {/* Brand Provest Glow */}
                   <div 
                     className="absolute inset-2 blur-xl opacity-20 group-hover:opacity-60 transition-opacity duration-500 rounded-full pointer-events-none"
                     style={{ backgroundColor: item.color }}

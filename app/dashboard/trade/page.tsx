@@ -16,30 +16,47 @@ import {
   Wallet
 } from 'lucide-react';
 import Image from 'next/image';
-import { useLoading } from '../context/LoadingContext';
-import { getMarkets, getCoinHistory, CoinMarketData } from '@/lib/crypto';
+import { getMarkets, getCoinHistory, CoinMarketData, getTopCoins } from '@/lib/crypto';
 import BalanceChart from '../components/BalanceChart';
 import { CoinSkeleton } from '../components/CoinSkeleton';
+import { useBalance } from '../context/BalanceContext';
+import { useNotification } from '../context/NotificationContext';
+import { useLoading } from '../context/LoadingContext';
+import { supabase } from '@/lib/supabase';
+import { useUser } from '../context/UserContext';
+import { useSearchParams } from 'next/navigation';
+import { Suspense } from 'react';
 
-export default function TradePage() {
+function TradeContent() {
+  const searchParams = useSearchParams();
+  const coinIdFromUrl = searchParams.get('coin');
+
   const [selectedCoin, setSelectedCoin] = useState<CoinMarketData | null>(null);
   const [coins, setCoins] = useState<CoinMarketData[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [page, setPage] = useState(1);
   const [timeRange, setTimeRange] = useState('7');
-  const [userBalance, setUserBalance] = useState(0); // For Deposit Guard
   const [showDepositGuard, setShowDepositGuard] = useState(false);
   const [activeTab, setActiveTab] = useState<'buy' | 'sell'>('buy');
+  const [tradeAmount, setTradeAmount] = useState('');
   const { setIsLoading } = useLoading();
+  const { totalUsdBalance, balances, getSymbolBalance, refreshBalances } = useBalance();
+  const { addNotification } = useNotification();
+  const { user } = useUser();
 
   useEffect(() => {
     const loadCoins = async () => {
       setLoading(true);
       try {
-        const data = await getMarkets(page, 10);
+        const data = await getTopCoins(100);
         setCoins(data);
-        if (!selectedCoin && data.length > 0) {
+        
+        if (coinIdFromUrl) {
+          const found = data.find(c => c.id === coinIdFromUrl);
+          if (found) setSelectedCoin(found);
+          else if (data.length > 0) setSelectedCoin(data[0]);
+        } else if (!selectedCoin && data.length > 0) {
           setSelectedCoin(data[0]);
         }
       } catch (err) {
@@ -49,7 +66,7 @@ export default function TradePage() {
       }
     };
     loadCoins();
-  }, [page]);
+  }, [coinIdFromUrl]);
 
   const filteredCoins = coins.filter(c => 
     c.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
@@ -69,17 +86,88 @@ export default function TradePage() {
     setMarketHistory(history);
   }, [selectedCoin]);
 
-  const handleTradeAction = () => {
-    if (userBalance <= 0) {
-      setShowDepositGuard(true);
+  const handleTradeAction = async () => {
+    if (!selectedCoin || !user) return;
+    const amount = parseFloat(tradeAmount);
+
+    if (isNaN(amount) || amount <= 0) {
+        addNotification('Please enter a valid amount', 'error');
+        return;
+    }
+
+    if (activeTab === 'buy') {
+        if (totalUsdBalance < amount) {
+            setShowDepositGuard(true);
+            return;
+        }
     } else {
-      setIsLoading(true, `Executing ${activeTab.toUpperCase()} Order`);
-      
-      // Simulate trade execution
-      setTimeout(() => {
-          setIsLoading(false);
-          console.log('Trade executed');
-      }, 3000);
+        const coinBalance = getSymbolBalance(selectedCoin.symbol);
+        const coinValueInUsd = coinBalance * selectedCoin.current_price;
+        if (coinValueInUsd < amount) {
+            addNotification(`Insufficient ${selectedCoin.symbol.toUpperCase()} balance`, 'error');
+            return;
+        }
+    }
+
+    setIsLoading(true, `Executing ${activeTab.toUpperCase()} Order`);
+    
+    try {
+        const coinAmount = amount / selectedCoin.current_price;
+        
+        // 1. Update/Add coin balance
+        const { data: currentWallets } = await supabase
+            .from('wallets')
+            .select('*')
+            .eq('user_id', user.id)
+            .eq('coin_symbol', activeTab === 'buy' ? selectedCoin.symbol : 'usd');
+
+        // Note: For simplicity, we assume USD is a 'coin' in the wallets table for now
+        // OR we just deduct from total... Actually, we need a proper USD wallet entry
+        
+        // Actually, let's just use the 'wallets' table for all assets including USD
+        const quoteSymbol = 'usd';
+        const baseSymbol = selectedCoin.symbol;
+
+        const { data: baseWallet } = await supabase.from('wallets').select('*').eq('user_id', user.id).eq('coin_symbol', baseSymbol).single();
+        const { data: quoteWallet } = await supabase.from('wallets').select('*').eq('user_id', user.id).eq('coin_symbol', quoteSymbol).single();
+
+        if (activeTab === 'buy') {
+            // Deduct USD, Add Coin
+            await supabase.from('wallets').update({ balance: (quoteWallet?.balance || 0) - amount }).eq('user_id', user.id).eq('coin_symbol', quoteSymbol);
+            if (baseWallet) {
+                await supabase.from('wallets').update({ balance: baseWallet.balance + coinAmount }).eq('user_id', user.id).eq('coin_symbol', baseSymbol);
+            } else {
+                await supabase.from('wallets').insert({ user_id: user.id, coin_symbol: baseSymbol, balance: coinAmount });
+            }
+        } else {
+            // Deduct Coin, Add USD
+            await supabase.from('wallets').update({ balance: baseWallet.balance - coinAmount }).eq('user_id', user.id).eq('coin_symbol', baseSymbol);
+            if (quoteWallet) {
+                await supabase.from('wallets').update({ balance: quoteWallet.balance + amount }).eq('user_id', user.id).eq('coin_symbol', quoteSymbol);
+            } else {
+                await supabase.from('wallets').insert({ user_id: user.id, coin_symbol: quoteSymbol, balance: amount });
+            }
+        }
+
+        // 2. Log Trade
+        await supabase.from('trades').insert({
+            user_id: user.id,
+            coin_symbol: selectedCoin.symbol,
+            coin_name: selectedCoin.name,
+            type: activeTab,
+            amount_usd: amount,
+            amount_coin: coinAmount,
+            price_at_execution: selectedCoin.current_price
+        });
+
+        await refreshBalances();
+        addNotification(`${activeTab.toUpperCase()} order executed successfully!`, 'success');
+        setTradeAmount('');
+    } catch (error) {
+        console.error('Trade execution failed:', error);
+        addNotification('Trade execution failed. Please try again.', 'error');
+    } finally {
+        setIsLoading(false);
     }
   };
 
@@ -320,12 +408,16 @@ export default function TradePage() {
                         <div className="space-y-2 sm:space-y-3">
                             <div className="flex justify-between items-center px-1">
                                 <label className="text-[10px] text-text-muted uppercase tracking-[0.2em] font-bold">Trading Amount</label>
-                                <span className="text-[11px] font-mono text-text-muted/60">Balance: $0.00</span>
+                                <span className="text-[11px] font-mono text-text-muted/60">
+                                    Balance: ${activeTab === 'buy' ? totalUsdBalance.toLocaleString() : (getSymbolBalance(selectedCoin?.symbol || '') * (selectedCoin?.current_price || 0)).toLocaleString()}
+                                </span>
                             </div>
                             <div className="relative group">
                                 <input 
                                     type="number" 
                                     placeholder="0.00"
+                                    value={tradeAmount}
+                                    onChange={(e) => setTradeAmount(e.target.value)}
                                     className="w-full bg-[#141822] border border-white/5 rounded-xl sm:rounded-2xl py-3 px-4 sm:py-4 sm:px-6 md:py-5 md:px-8 text-lg sm:text-xl md:text-2xl font-bold text-white outline-none focus:border-dash-accent/40 focus:bg-white/[0.04] transition-all font-mono"
                                 />
                                 <span className="absolute right-8 top-1/2 -translate-y-1/2 font-bold text-white/20 text-sm group-focus-within:text-dash-accent transition-colors tracking-widest">USD</span>
@@ -335,7 +427,9 @@ export default function TradePage() {
                         <div className="space-y-2 sm:space-y-3">
                             <label className="text-[10px] text-text-muted uppercase tracking-[0.2em] font-bold px-1">Estimated Return</label>
                             <div className="bg-[#141822] rounded-xl sm:rounded-2xl py-3 px-4 sm:py-4 sm:px-6 md:py-5 md:px-8 flex items-center justify-between border border-white/5 group hover:bg-white/[0.02] transition-colors">
-                                <span className="text-lg sm:text-xl md:text-2xl font-bold text-white/10 font-mono">0.00</span>
+                                <span className="text-lg sm:text-xl md:text-2xl font-bold text-white/10 font-mono">
+                                    {selectedCoin && tradeAmount ? (parseFloat(tradeAmount) / selectedCoin.current_price).toFixed(6) : '0.00'}
+                                </span>
                                 <div className="flex items-center gap-3 bg-white/5 px-4 py-2 rounded-xl border border-white/10 shadow-inner group-hover:border-dash-accent/20 transition-all">
                                      <div className="w-6 h-6 relative rounded-full overflow-hidden shadow-2xl">
                                         {selectedCoin && <Image src={selectedCoin.image} alt="" fill className="object-contain" />}
@@ -437,4 +531,14 @@ export default function TradePage() {
       </div>
     </div>
   );
+}
+
+export default function TradePage() {
+    return (
+        <Suspense fallback={<div className="min-h-screen bg-dash-bg flex items-center justify-center">
+            <div className="w-12 h-12 border-4 border-dash-accent/30 border-t-dash-accent rounded-full animate-spin" />
+        </div>}>
+            <TradeContent />
+        </Suspense>
+    );
 }
