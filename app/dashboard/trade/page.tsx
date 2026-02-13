@@ -16,6 +16,7 @@ import {
   Wallet
 } from 'lucide-react';
 import Image from 'next/image';
+import { useLoading } from '../context/LoadingContext';
 import { getMarkets, getCoinHistory, CoinMarketData } from '@/lib/crypto';
 import BalanceChart from '../components/BalanceChart';
 import { CoinSkeleton } from '../components/CoinSkeleton';
@@ -30,6 +31,7 @@ export default function TradePage() {
   const [userBalance, setUserBalance] = useState(0); // For Deposit Guard
   const [showDepositGuard, setShowDepositGuard] = useState(false);
   const [activeTab, setActiveTab] = useState<'buy' | 'sell'>('buy');
+  const { setIsLoading } = useLoading();
 
   useEffect(() => {
     const loadCoins = async () => {
@@ -71,8 +73,13 @@ export default function TradePage() {
     if (userBalance <= 0) {
       setShowDepositGuard(true);
     } else {
-      // Logic for trade execution would go here
-      console.log('Trade executed');
+      setIsLoading(true, `Executing ${activeTab.toUpperCase()} Order`);
+      
+      // Simulate trade execution
+      setTimeout(() => {
+          setIsLoading(false);
+          console.log('Trade executed');
+      }, 3000);
     }
   };
 

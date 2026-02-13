@@ -12,6 +12,7 @@ import {
 import Link from 'next/link';
 import Image from 'next/image';
 import { motion, AnimatePresence } from 'motion/react';
+import { useLoading } from '../context/LoadingContext';
 
 // Mock data (shared with Deposit for consistency)
 const SUPPORTED_COINS = [
@@ -58,7 +59,7 @@ export default function WithdrawPage() {
   const [showCoinSelector, setShowCoinSelector] = useState(false);
   const [address, setAddress] = useState('');
   const [amount, setAmount] = useState('');
-  const [loading, setLoading] = useState(false);
+  const { setIsLoading } = useLoading();
 
   const handleSelectCoin = (coin: typeof SUPPORTED_COINS[0]) => {
       setSelectedCoin(coin);
@@ -68,6 +69,16 @@ export default function WithdrawPage() {
 
   const handleMax = () => {
     setAmount(selectedCoin.balance.toString());
+  };
+
+  const handleWithdraw = () => {
+    setIsLoading(true, `Processing ${selectedCoin.symbol} Withdrawal`);
+    
+    // Simulate transaction delay
+    setTimeout(() => {
+        setIsLoading(false);
+        // For demo, we might show a success modal here later
+    }, 2500);
   };
 
   const handlePaste = async () => {
@@ -230,6 +241,7 @@ export default function WithdrawPage() {
 
         {/* Action Button */}
         <button 
+            onClick={handleWithdraw}
             disabled={!address || !amount || parseFloat(amount) <= 0 || parseFloat(amount) > selectedCoin.balance}
             className="w-full py-4 bg-dash-accent text-bg-primary font-bold rounded-2xl hover:bg-white transition-all active:scale-[0.98] shadow-lg shadow-dash-accent/10 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
         >

@@ -3,9 +3,15 @@
 import { Search, Plus, ChevronDown, Bell, Menu, ShieldCheck } from 'lucide-react';
 import Image from 'next/image';
 import { useSidebar } from '../context/SidebarContext';
+import { useLoading } from '../context/LoadingContext';
+import { useUser } from '../context/UserContext';
+import Link from 'next/link';
 
 export default function Topbar() {
   const { toggle } = useSidebar();
+  const { user } = useUser();
+  const fullName = user?.user_metadata?.full_name || "David Ukata";
+  const avatarUrl = user?.user_metadata?.avatar_url || "/nft-one.png";
 
   return (
     <header className="h-[80px] sm:h-[90px] w-full flex items-center justify-between px-4 sm:px-8 bg-dash-bg/40 backdrop-blur-2xl sticky top-0 z-40 transition-all border-b border-dash-border/30">
@@ -40,29 +46,30 @@ export default function Topbar() {
 
       {/* Right Actions */}
       <div className="flex items-center gap-6">
-        <button className="flex items-center gap-2 px-3 sm:px-5 py-2.5 bg-dash-accent text-bg-primary rounded-full font-bold text-sm hover:bg-white transition-all shadow-lg active:scale-95">
-          <Plus size={18} />
-          <span className="hidden sm:inline">Fund Wallet</span>
-        </button>
+        <Link href="/dashboard/deposit">
+          <button className="flex items-center gap-2 px-3 sm:px-5 py-2.5 bg-dash-accent text-bg-primary rounded-full font-bold text-sm hover:bg-white transition-all shadow-lg active:scale-95">
+            <Plus size={18} />
+            <span className="hidden sm:inline">Fund Wallet</span>
+          </button>
+        </Link>
 
         <div className="h-10 w-px bg-dash-border" />
 
-        <button className="relative p-2 text-text-secondary hover:text-white transition-colors">
-            <Bell size={20} />
-            <span className="absolute top-2 right-2 w-2 h-2 bg-dash-accent rounded-full border-2 border-dash-bg" />
-        </button>
-
         {/* Profile */}
-        <div className="flex items-center gap-3 pl-2 cursor-pointer group">
-          <div className="w-10 h-10 rounded-full border-2 border-dash-accent/20 overflow-hidden group-hover:border-dash-accent transition-colors bg-dash-surface flex items-center justify-center">
-             <span className="text-xs font-bold text-dash-accent uppercase">DU</span>
+        <Link href="/dashboard/profile" className="flex items-center gap-3 pl-2 cursor-pointer group">
+          <div className="w-10 h-10 rounded-full border border-dash-accent/30 overflow-hidden group-hover:border-dash-accent transition-all relative">
+             <Image 
+                src={avatarUrl} 
+                alt="Profile" 
+                fill 
+                className="object-cover"
+                sizes="40px"
+             />
           </div>
           <div className="hidden sm:block text-left">
-            <p className="text-sm font-bold text-white font-outfit leading-none">David Ukata</p>
-            <p className="text-[11px] text-text-muted mt-1 uppercase tracking-wider font-space">Institutional Trader</p>
+            <p className="text-sm font-bold text-white font-outfit leading-none">{fullName}</p>
           </div>
-          <ChevronDown size={14} className="text-text-muted group-hover:text-white transition-colors" />
-        </div>
+        </Link>
       </div>
     </header>
   );
