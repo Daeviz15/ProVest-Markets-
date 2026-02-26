@@ -1,3 +1,6 @@
+import AdminSidebar from './components/AdminSidebar';
+import { AdminSidebarProvider } from './context/AdminSidebarContext';
+import AdminMainContent from './components/AdminMainContent';
 import { createClient } from '@/utils/supabase/server';
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
 import { redirect } from 'next/navigation';
@@ -27,8 +30,13 @@ export default async function AdminLayout({
   }
 
   return (
-    <div className="min-h-screen bg-[#0A0D14] flex font-outfit">
-      {children}
-    </div>
+    <AdminSidebarProvider>
+      <div className="min-h-screen bg-[#0A0D14] flex font-outfit relative">
+        <AdminSidebar />
+        <AdminMainContent>
+          {children}
+        </AdminMainContent>
+      </div>
+    </AdminSidebarProvider>
   );
 }

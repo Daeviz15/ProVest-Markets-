@@ -5,12 +5,12 @@ import { motion, AnimatePresence } from 'motion/react';
 import {
   Users, Wallet, TrendingUp, Clock,
   X, Plus, Minus, Replace, Search,
-  ChevronLeft, ChevronRight, DollarSign, Coins
+  ChevronLeft, ChevronRight, DollarSign, Coins, ChevronDown, RefreshCw
 } from 'lucide-react';
 import AdminSidebar from '../components/AdminSidebar';
 import AdminTopbar from '../components/AdminTopbar';
 import {
-  getAdminUsers, getUserWallets, getUserPortfolioValue, updateUserBalance, updatePortfolioBalance, getAdminStats,
+  getAdminUsers, getUserWallets, getUserPortfolioValue, getAdminMarketData, updateUserBalance, updatePortfolioBalance, getAdminStats,
   type AdminUser, type UserWallet, type AdminStats,
 } from '../actions';
 
@@ -116,16 +116,54 @@ function BalanceModal({
   const [activeTab, setActiveTab] = useState<'portfolio' | 'coins'>('portfolio');
   const [action, setAction] = useState<'set' | 'add' | 'subtract'>('add');
   const [coinSymbol, setCoinSymbol] = useState('');
-  const [amount, setAmount] = useState('');
+  const [amount, setAmount] = useState(''); // This will be USD for BOTH tabs now
   const [note, setNote] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; msg: string } | null>(null);
   const [portfolioValue, setPortfolioValue] = useState<number | null>(null);
+  const [marketData, setMarketData] = useState<any[]>([]);
+  const [refreshing, setRefreshing] = useState(false);
 
-  // Fetch real portfolio value on mount and after modifications
+  // Fetch real portfolio value and market data for dropdown/conversion
   useEffect(() => {
-    getUserPortfolioValue(user.id).then(setPortfolioValue).catch(() => setPortfolioValue(0));
-  }, [user.id, wallets]);
+    const loadModalData = async () => {
+      try {
+        const [portfolio, markets] = await Promise.all([
+          getUserPortfolioValue(user.id),
+          getAdminMarketData()
+        ]);
+        setPortfolioValue(portfolio);
+        setMarketData(markets);
+        
+        // If coinSymbol is empty, initialize it with the first coin from market data
+        if (markets.length > 0 && !coinSymbol) {
+          setCoinSymbol(markets[0].symbol.toUpperCase());
+        }
+      } catch (err) {
+        console.error("Modal data load error:", err);
+        setPortfolioValue(0);
+        // Set basic default if everything fails
+        setCoinSymbol('BTC');
+      }
+    };
+    loadModalData();
+  }, [user.id, coinSymbol]);
+
+  const handleManualRefresh = async () => {
+    setRefreshing(true);
+    try {
+      const portfolio = await getUserPortfolioValue(user.id);
+      setPortfolioValue(portfolio);
+      onRefresh(); // Refresh wallets in parent
+    } finally {
+      setTimeout(() => setRefreshing(false), 600); // Small delay for visual feedback
+    }
+  };
+
+  // Derived: Current price of selected coin
+  const selectedCoinData = marketData.find(c => c.symbol.toUpperCase() === coinSymbol.toUpperCase());
+  const currentPrice = selectedCoinData?.current_price || 0;
+  const convertedCoinAmount = amount && currentPrice ? (parseFloat(amount) / currentPrice) : 0;
 
   const handlePortfolioSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -155,22 +193,27 @@ function BalanceModal({
 
   const handleCoinSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!coinSymbol || !amount) return;
+    if (!coinSymbol || !amount || !currentPrice) return;
 
     setSubmitting(true);
     setFeedback(null);
 
+    // Convert USD to coin units
+    const coinAmount = action === 'set' ? convertedCoinAmount : convertedCoinAmount;
+
     const result = await updateUserBalance(
       user.id,
       coinSymbol.toUpperCase(),
-      parseFloat(amount),
+      coinAmount,
       action,
       note
     );
 
     if (result.success) {
-      setFeedback({ type: 'success', msg: `${coinSymbol.toUpperCase()} balance ${action === 'set' ? 'set to' : action === 'add' ? 'increased by' : 'decreased by'} ${amount}` });
-      setCoinSymbol('');
+      setFeedback({ 
+        type: 'success', 
+        msg: `${coinSymbol.toUpperCase()} balance ${action === 'set' ? 'set to' : action === 'add' ? 'increased by' : 'decreased by'} ${coinAmount.toFixed(8)} (${parseFloat(amount).toLocaleString()} USD)` 
+      });
       setAmount('');
       setNote('');
       onRefresh();
@@ -247,13 +290,23 @@ function BalanceModal({
             <div className="p-6">
               {/* Current Portfolio Balance */}
               <div className="bg-gradient-to-br from-dash-accent/[0.08] to-transparent border border-dash-accent/10 rounded-2xl p-5 mb-6">
+              <div className="flex justify-between items-start mb-2">
                 <span className="text-[10px] font-bold text-text-muted uppercase tracking-widest">Current Portfolio Value</span>
-                <p className="text-3xl font-bold text-white font-mono mt-2">
-                  {portfolioValue !== null
-                    ? `$${portfolioValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-                    : <span className="inline-block w-32 h-8 bg-white/[0.04] rounded-lg animate-pulse" />
-                  }
-                </p>
+                <button 
+                  onClick={handleManualRefresh}
+                  disabled={refreshing}
+                  className={`p-1.5 rounded-lg bg-white/5 text-text-muted hover:text-dash-accent hover:bg-dash-accent/10 transition-all ${refreshing ? 'animate-spin' : ''}`}
+                  title="Refresh balance"
+                >
+                  <RefreshCw size={14} />
+                </button>
+              </div>
+              <p className="text-3xl font-bold text-white font-mono">
+                {portfolioValue !== null && !refreshing
+                  ? `$${portfolioValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                  : <span className="inline-block w-32 h-8 bg-white/[0.04] rounded-lg animate-pulse" />
+                }
+              </p>
                 <span className="text-[10px] text-text-muted mt-1 block">Calculated from all coin holdings × market prices</span>
               </div>
 
@@ -399,34 +452,62 @@ function BalanceModal({
                   })}
                 </div>
 
-                {/* Coin Symbol */}
+                {/* Coin Dropdown */}
                 <div className="space-y-2">
-                  <label className="text-[10px] font-bold text-text-muted uppercase tracking-widest">Coin Symbol</label>
-                  <input
-                    type="text"
-                    value={coinSymbol}
-                    onChange={(e) => setCoinSymbol(e.target.value)}
-                    placeholder="e.g. BTC, ETH, SOL"
-                    required
-                    className="w-full bg-white/[0.03] border border-white/[0.06] rounded-xl py-3 px-4 text-white text-sm outline-none focus:border-dash-accent/30 transition-all font-mono uppercase"
-                  />
+                  <label className="text-[10px] font-bold text-text-muted uppercase tracking-widest">Select Asset</label>
+                  <div className="relative group">
+                    <select
+                      value={coinSymbol.toUpperCase() || 'BTC'}
+                      onChange={(e) => setCoinSymbol(e.target.value)}
+                      disabled={marketData.length === 0}
+                      className="w-full bg-[#161C2A] border border-white/[0.06] rounded-xl py-3 px-4 text-white text-sm outline-none focus:border-dash-accent/30 transition-all font-mono appearance-none cursor-pointer disabled:opacity-50 relative z-10"
+                    >
+                      {marketData.length === 0 ? (
+                        <option value="BTC" className="bg-[#0C101A] text-white">Loading assets...</option>
+                      ) : (
+                        marketData.map((c: any) => (
+                          <option key={c.id} value={c.symbol.toUpperCase()} className="bg-[#161C2A] text-white py-2">
+                            {c.name} ({c.symbol.toUpperCase()}) — ${c.current_price.toLocaleString()}
+                          </option>
+                        ))
+                      )}
+                    </select>
+                    <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-text-muted">
+                      <ChevronDown size={14} />
+                    </div>
+                  </div>
                 </div>
 
-                {/* Amount */}
+                {/* Amount in USD */}
                 <div className="space-y-2">
-                  <label className="text-[10px] font-bold text-text-muted uppercase tracking-widest">
-                    {action === 'set' ? 'New Balance' : 'Amount'}
-                  </label>
-                  <input
-                    type="number"
-                    value={amount}
-                    onChange={(e) => setAmount(e.target.value)}
-                    placeholder="0.00"
-                    required
-                    min="0"
-                    step="any"
-                    className="w-full bg-white/[0.03] border border-white/[0.06] rounded-xl py-3 px-4 text-white text-sm outline-none focus:border-dash-accent/30 transition-all font-mono"
-                  />
+                  <div className="flex justify-between items-center">
+                    <label className="text-[10px] font-bold text-text-muted uppercase tracking-widest">
+                      {action === 'set' ? 'New Balance (USD)' : 'Amount (USD)'}
+                    </label>
+                    {amount && currentPrice > 0 && (
+                      <span className="text-[10px] font-bold text-dash-accent font-mono">
+                        ≈ {convertedCoinAmount.toFixed(8)} {coinSymbol.toUpperCase()}
+                      </span>
+                    )}
+                  </div>
+                  <div className="relative">
+                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-text-muted text-sm font-mono">$</span>
+                    <input
+                      type="number"
+                      value={amount}
+                      onChange={(e) => setAmount(e.target.value)}
+                      placeholder="0.00"
+                      required
+                      min="0"
+                      step="any"
+                      className="w-full bg-white/[0.03] border border-white/[0.06] rounded-xl py-3 pl-8 pr-4 text-white text-sm outline-none focus:border-dash-accent/30 transition-all font-mono"
+                    />
+                  </div>
+                  {currentPrice > 0 && (
+                    <p className="text-[10px] text-text-muted font-mono mt-1 px-1">
+                      Current Price: ${currentPrice.toLocaleString()} / {coinSymbol.toUpperCase()}
+                    </p>
+                  )}
                 </div>
 
                 {/* Note */}
@@ -562,32 +643,32 @@ export default function AdminUsersPage() {
   };
 
   return (
-    <>
-      <AdminSidebar />
-      <div className="flex-1 flex flex-col min-h-screen overflow-hidden">
-        <AdminTopbar
-          searchQuery={searchQuery}
-          onSearchChange={handleSearchChange}
-          searchPlaceholder="Search by name or email..."
-        />
+    <div className="p-4 sm:p-6 lg:p-8">
+      {/* Topbar inside page for search integration */}
+      <AdminTopbar
+        searchQuery={searchQuery}
+        onSearchChange={handleSearchChange}
+        searchPlaceholder="Search by name or email..."
+      />
 
-        <main className="flex-1 p-6 lg:p-8 overflow-y-auto">
-          {/* Page Header */}
-          <div className="mb-8">
-            <h1 className="text-2xl font-bold text-white">User Management</h1>
-            <p className="text-sm text-text-muted mt-1">View and modify user wallet balances</p>
-          </div>
+      <div className="mt-8">
+        {/* Page Header */}
+        <div className="mb-8">
+          <h1 className="text-2xl font-bold text-white">User Management</h1>
+          <p className="text-sm text-text-muted mt-1">View and modify user wallet balances</p>
+        </div>
 
-          {/* Stats Grid */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-            <StatCard icon={Users} label="Total Users" value={stats?.totalUsers ?? '—'} accent="bg-blue-500/10 text-blue-400" />
-            <StatCard icon={Wallet} label="Active Wallets" value={stats?.activeWallets ?? '—'} accent="bg-dash-accent/10 text-dash-accent" />
-            <StatCard icon={TrendingUp} label="Funded Users" value={stats?.fundedUsers ?? '—'} accent="bg-amber-500/10 text-amber-400" />
-            <StatCard icon={Clock} label="New Today" value={stats?.newToday ?? '—'} accent="bg-purple-500/10 text-purple-400" />
-          </div>
+        {/* Stats Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+          <StatCard icon={Users} label="Total Users" value={stats?.totalUsers ?? '—'} accent="bg-blue-500/10 text-blue-400" />
+          <StatCard icon={Wallet} label="Active Wallets" value={stats?.activeWallets ?? '—'} accent="bg-dash-accent/10 text-dash-accent" />
+          <StatCard icon={TrendingUp} label="Funded Users" value={stats?.fundedUsers ?? '—'} accent="bg-amber-500/10 text-amber-400" />
+          <StatCard icon={Clock} label="New Today" value={stats?.newToday ?? '—'} accent="bg-purple-500/10 text-purple-400" />
+        </div>
 
-          {/* Users Table */}
-          <div className="bg-[#0C101A] border border-white/[0.06] rounded-2xl overflow-hidden">
+        {/* Users Table */}
+        <div className="bg-[#0C101A] border border-white/[0.06] rounded-2xl overflow-hidden shadow-2xl">
+          {/* ... (rest of the table content) */}
             {/* Table Header */}
             <div className="px-6 py-4 border-b border-white/[0.06] flex items-center justify-between">
               <div className="flex items-center gap-3">
@@ -705,8 +786,7 @@ export default function AdminUsersPage() {
                 onPageChange={handlePageChange}
               />
             )}
-          </div>
-        </main>
+        </div>
       </div>
 
       {/* Balance Modal */}
@@ -721,6 +801,6 @@ export default function AdminUsersPage() {
           />
         )}
       </AnimatePresence>
-    </>
+    </div>
   );
 }

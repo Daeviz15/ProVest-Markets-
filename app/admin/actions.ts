@@ -142,6 +142,34 @@ export async function getUserWallets(userId: string): Promise<UserWallet[]> {
   }));
 }
 
+// Fetch market prices for admin dropdown and conversion
+export async function getAdminMarketData(): Promise<any[]> {
+  const FALLBACK_DATA = [
+    { id: 'bitcoin', symbol: 'btc', name: 'Bitcoin', current_price: 65000 },
+    { id: 'ethereum', symbol: 'eth', name: 'Ethereum', current_price: 3500 },
+    { id: 'tether', symbol: 'usdt', name: 'Tether', current_price: 1 },
+    { id: 'solana', symbol: 'solana', name: 'Solana', current_price: 150 },
+    { id: 'binancecoin', symbol: 'bnb', name: 'BNB', current_price: 600 },
+  ];
+
+  await verifyAdmin();
+  try {
+    const res = await fetch(
+      'https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=100&page=1&sparkline=false&price_change_percentage=24h',
+      { headers: { 'Accept': 'application/json' }, next: { revalidate: 300 } }
+    );
+    if (!res.ok) {
+      console.warn("CoinGecko API limited, using fallback data");
+      return FALLBACK_DATA;
+    }
+    const data = await res.json();
+    return data && data.length > 0 ? data : FALLBACK_DATA;
+  } catch (err) {
+    console.error("CoinGecko fetch error:", err);
+    return FALLBACK_DATA;
+  }
+}
+
 // Fetch real portfolio value by calculating coin balances × market prices
 export async function getUserPortfolioValue(userId: string): Promise<number> {
   await verifyAdmin();
@@ -153,26 +181,17 @@ export async function getUserPortfolioValue(userId: string): Promise<number> {
 
   if (!wallets || wallets.length === 0) return 0;
 
-  // Fetch market prices from CoinGecko (server-side direct call)
-  try {
-    const res = await fetch(
-      'https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=250&page=1&sparkline=false',
-      { headers: { 'Accept': 'application/json' }, next: { revalidate: 300 } }
-    );
-    if (!res.ok) return 0;
-    const marketData: Array<{ symbol: string; current_price: number }> = await res.json();
+  const marketData = await getAdminMarketData();
+  if (marketData.length === 0) return 0;
 
-    let total = 0;
-    for (const w of wallets) {
-      const balance = Number(w.balance);
-      if (balance <= 0) continue;
-      const coin = marketData.find(c => c.symbol.toLowerCase() === w.coin_symbol.toLowerCase());
-      total += balance * (coin?.current_price || 0);
-    }
-    return total;
-  } catch {
-    return 0;
+  let total = 0;
+  for (const w of wallets) {
+    const balance = Number(w.balance);
+    if (balance <= 0) continue;
+    const coin = marketData.find((c: any) => c.symbol.toLowerCase() === w.coin_symbol.toLowerCase());
+    total += balance * (coin?.current_price || 0);
   }
+  return total;
 }
 
 // ============================================

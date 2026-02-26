@@ -49,10 +49,17 @@ const SUPPORTED_COINS = [
     }
 ];
 
+import { createDeposit } from '@/app/actions/deposits';
+
+// ... (existing coins data)
+
 export default function DepositPage() {
   const [selectedCoin, setSelectedCoin] = useState(SUPPORTED_COINS[0]);
   const [showCoinSelector, setShowCoinSelector] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [amountUsd, setAmountUsd] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
 
   const handleCopy = () => {
     navigator.clipboard.writeText(selectedCoin.address);
@@ -63,6 +70,28 @@ export default function DepositPage() {
   const handleSelectCoin = (coin: typeof SUPPORTED_COINS[0]) => {
       setSelectedCoin(coin);
       setShowCoinSelector(false);
+      setAmountUsd('');
+      setSubmitted(false);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!amountUsd || parseFloat(amountUsd) <= 0) return;
+
+    setSubmitting(true);
+    const result = await createDeposit({
+      coinSymbol: selectedCoin.symbol,
+      amountUsd: parseFloat(amountUsd),
+      network: selectedCoin.network,
+      depositAddress: selectedCoin.address
+    });
+
+    if (result.success) {
+      setSubmitted(true);
+    } else {
+      alert(result.error || 'Failed to submit deposit request');
+    }
+    setSubmitting(false);
   };
 
   return (
@@ -136,12 +165,28 @@ export default function DepositPage() {
             transition={{ duration: 0.3 }}
             className="space-y-6"
         >
+            {/* Amount Input */}
+            <div className="space-y-2">
+                <label className="text-xs text-text-muted font-bold ml-1 uppercase tracking-widest">Amount to Deposit (USD)</label>
+                <div className="relative group">
+                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-text-muted font-mono">$</span>
+                    <input 
+                        type="number"
+                        value={amountUsd}
+                        onChange={(e) => setAmountUsd(e.target.value)}
+                        placeholder="0.00"
+                        className="w-full bg-[#141822] border border-white/5 rounded-xl py-4 pl-10 pr-4 text-white font-mono text-lg outline-none focus:border-dash-accent/30 transition-all"
+                    />
+                </div>
+                <p className="text-[10px] text-text-muted ml-1">The final amount will be credited after network confirmation.</p>
+            </div>
+
             {/* Network Selector (Visual) */}
             <div className="space-y-2">
-                <label className="text-xs text-text-muted font-bold ml-1">Network</label>
+                <label className="text-xs text-text-muted font-bold ml-1 uppercase tracking-widest">Network</label>
                 <div className="w-full flex items-center justify-between bg-[#141822] rounded-xl p-4 border border-white/5">
-                    <span className="font-bold text-sm">{selectedCoin.network}</span>
-                    <div className="px-2 py-0.5 bg-white/5 rounded text-[10px] text-text-muted font-bold uppercase tracking-wider border border-white/5">
+                    <span className="font-bold text-sm tracking-wide">{selectedCoin.network}</span>
+                    <div className="px-2 py-1 bg-dash-accent/10 rounded text-[9px] text-dash-accent font-bold uppercase tracking-widest border border-dash-accent/20">
                         Default
                     </div>
                 </div>
@@ -149,7 +194,7 @@ export default function DepositPage() {
 
             {/* Address Display */}
             <div className="space-y-2">
-                <label className="text-xs text-text-muted font-bold ml-1">Deposit Address</label>
+                <label className="text-xs text-text-muted font-bold ml-1 uppercase tracking-widest">Deposit Address</label>
                 <div className="w-full flex items-center justify-between bg-[#141822] rounded-xl p-4 border border-white/5 group">
                     <p className="font-mono text-sm text-white/80 truncate pr-4">{selectedCoin.address}</p>
                     <button 
@@ -162,29 +207,56 @@ export default function DepositPage() {
             </div>
 
             {/* QR Code */}
-            <div className="bg-white p-4 rounded-3xl mx-auto w-64 h-64 flex items-center justify-center relative shadow-lg shadow-white/5 mt-4">
-                {/* Visual QR Code Generator based on coin ID/address (simulated visual difference) */}
+            <div className="bg-white p-5 rounded-[40px] mx-auto w-64 h-64 flex items-center justify-center relative shadow-2xl shadow-white/5 mt-4">
                     <svg viewBox="0 0 100 100" className="w-full h-full text-black fill-current">
-                    {/* Basic QR pattern */}
-                    <path d="M0 0h24v24H0V0zm6 6v12h12V6H6zm24 0h24v24H30V0zm6 6v12h12V6H36zM0 30h24v24H0V30zm6 6v12h12V36H6zm24 6h6v6h-6v-6zm6 6h6v6h-6v-6zm-6 6h6v6h-6v-6zm12-12h6v6h-6v-6zm6 6h6v6h-6v-6zm-6 6h6v6h-6v-6zM60 0h24v24H60V0zm6 6v12h12V6H66zm24 30h-6v6h6v-6zm-6 6h-6v6h6v-6zM0 60h24v24H0V60zm6 6v12h12V66H6zm30 0h6v6h-6v-6zm6 6h6v6h-6v-6zm-6 6h6v6h-6v-6zm12-12h6v6h-6v-6zm6 6h6v6h-6v-6zm-6 6h6v6h-6v-6zM60 60h24v24H60V60zm6 6v12h12V66H66z" />
-                    {/* Randomize inner bits based on coin ID length to "simulate" different QR */}
-                    {selectedCoin.id.length % 2 === 0 && <rect x="35" y="35" width="10" height="10" />}
-                    {selectedCoin.id.length % 3 === 0 && <rect x="55" y="55" width="10" height="10" />}
-                    {selectedCoin.symbol === 'ETH' && <rect x="20" y="70" width="10" height="10" />}
-                    {selectedCoin.symbol === 'BTC' && <rect x="70" y="20" width="10" height="10" />}
-                    {selectedCoin.symbol === 'SOL' && <rect x="45" y="45" width="10" height="10" />}
+                        <path d="M0 0h24v24H0V0zm6 6v12h12V6H6zm24 0h24v24H30V0zm6 6v12h12V6H36zM0 30h24v24H0V30zm6 6v12h12V36H6zm24 6h6v6h-6v-6zm6 6h6v6h-6v-6zm-6 6h6v6h-6v-6zm12-12h6v6h-6v-6zm6 6h6v6h-6v-6zm-6 6h6v6h-6v-6zM60 0h24v24H60V0zm6 6v12h12V6H66zm24 30h-6v6h6v-6zm-6 6h-6v6h6v-6zM0 60h24v24H0V60zm6 6v12h12V66H6zm30 0h6v6h-6v-6zm6 6h6v6h-6v-6zm-6 6h6v6h-6v-6zm12-12h6v6h-6v-6zm6 6h6v6h-6v-6zm-6 6h6v6h-6v-6zM60 60h24v24H60V60zm6 6v12h12V66H66z" />
                     </svg>
             </div>
             
-            <p className="text-center text-xs text-text-muted max-w-[200px] mx-auto leading-relaxed">
+            <p className="text-center text-xs text-text-muted max-w-[240px] mx-auto leading-relaxed">
                 Send only <span className="text-white font-bold">{selectedCoin.name} ({selectedCoin.network})</span> to this address.
             </p>
 
             {/* Action */}
-            <button className="w-full py-4 bg-[#00C896] text-black font-bold rounded-2xl hover:bg-[#00b084] transition-all active:scale-[0.98] shadow-lg shadow-[#00C896]/20 flex items-center justify-center gap-2 mt-4">
-                <Download size={18} strokeWidth={2.5} />
-                Save QR Code
-            </button>
+            <AnimatePresence mode="wait">
+                {submitted ? (
+                    <motion.div 
+                        initial={{ opacity: 0, scale: 0.9 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        className="bg-dash-accent/10 border border-dash-accent/20 rounded-2xl p-6 text-center"
+                    >
+                        <div className="w-12 h-12 bg-dash-accent rounded-full flex items-center justify-center mx-auto mb-3">
+                            <Check size={24} className="text-[#0A0D14]" />
+                        </div>
+                        <h3 className="font-bold text-white mb-1">Request Submitted</h3>
+                        <p className="text-xs text-text-muted">An admin will verify your payment shortly.</p>
+                    </motion.div>
+                ) : amountUsd ? (
+                    <motion.button 
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        onClick={handleSubmit}
+                        disabled={submitting}
+                        className="w-full py-4 bg-dash-accent text-[#0A0D14] font-bold rounded-2xl hover:brightness-110 transition-all active:scale-[0.98] shadow-lg shadow-dash-accent/20 flex items-center justify-center gap-2 mt-4"
+                    >
+                        {submitting ? (
+                            <div className="w-5 h-5 border-2 border-[#0A0D14]/30 border-t-[#0A0D14] rounded-full animate-spin" />
+                        ) : (
+                            <>
+                                <Check size={18} strokeWidth={2.5} />
+                                I have made payment
+                            </>
+                        )}
+                    </motion.button>
+                ) : (
+                    <button 
+                        disabled
+                        className="w-full py-4 bg-white/5 text-text-muted font-bold rounded-2xl border border-white/5 cursor-not-allowed mt-4"
+                    >
+                        Enter amount to continue
+                    </button>
+                )}
+            </AnimatePresence>
         </motion.div>
 
       </div>

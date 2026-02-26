@@ -24,12 +24,7 @@ export default function WalletPage() {
   const [coins, setCoins] = useState<CoinMarketData[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
-  const { balances, getSymbolBalance } = useBalance();
-
-  const totalBalanceUsd = balances.reduce((acc, curr) => {
-    const coin = coins.find(c => c.symbol.toLowerCase() === curr.coin_symbol.toLowerCase());
-    return acc + (curr.balance * (coin?.current_price || 0));
-  }, 0);
+  const { balances, getSymbolBalance, totalUsdBalance } = useBalance();
 
   useEffect(() => {
     const fetchAssets = async () => {
@@ -76,7 +71,7 @@ export default function WalletPage() {
           
           <div className="relative z-10 text-center sm:text-left">
               <h2 className="text-4xl sm:text-5xl font-bold text-white tracking-tight mb-8 drop-shadow-sm font-mono">
-                ${totalBalanceUsd.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                ${totalUsdBalance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </h2>
               
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 max-w-3xl">
