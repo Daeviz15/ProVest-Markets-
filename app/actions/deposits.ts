@@ -98,7 +98,62 @@ export async function updateDepositStatus(
     return { error: 'Deposit already processed' };
   }
 
-  // 3. Start update
+// 3. If approved, pre-calculate the coin amount to credit
+  let coinAmount = 0;
+  if (status === 'approved') {
+    const symbol = deposit.coin_symbol.toLowerCase();
+    const coinmap: Record<string, string> = {
+      btc: 'bitcoin',
+      eth: 'ethereum',
+      sol: 'solana',
+      usdt: 'tether',
+      usdc: 'usd-coin',
+      erc20: 'ethereum',
+      trc20: 'tether' // assuming TRC20 usually refers to USDT on Tron
+    };
+    const coinId = coinmap[symbol] || symbol;
+
+    let currentPrice = 1;
+    
+    try {
+      const res = await fetch(
+        `https://api.coingecko.com/api/v3/simple/price?ids=${coinId}&vs_currencies=usd`,
+        { next: { revalidate: 0 } }
+      );
+      
+      if (res.ok) {
+        const priceData = await res.json();
+        currentPrice = priceData[coinId]?.usd;
+      } else {
+        throw new Error('CoinGecko API error');
+      }
+    } catch (err) {
+      console.warn('Failed to fetch live price, using fallback values:', err);
+    }
+
+    // Fallbacks in case API rate limits or price missing
+    if (!currentPrice || currentPrice <= 0) {
+      const fallbacks: Record<string, number> = {
+        bitcoin: 90000,
+        btc: 90000,
+        ethereum: 3000,
+        eth: 3000,
+        solana: 100,
+        sol: 100,
+        tether: 1,
+        usdt: 1,
+        'usd-coin': 1,
+        usdc: 1,
+        erc20: 3000, // assuming ETH network means ETH native
+        trc20: 1
+      };
+      currentPrice = fallbacks[coinId] || 1;
+    }
+
+    coinAmount = deposit.amount_usd / currentPrice;
+  }
+
+  // 4. Update deposit status
   const { error: updateError } = await supabaseAdmin
     .from('deposits')
     .update({ status, updated_at: new Date().toISOString() })
@@ -108,20 +163,9 @@ export async function updateDepositStatus(
     return { error: 'Failed to update deposit status' };
   }
 
-  // 4. If approved, credit the user's wallet
+  // 5. If approved, credit the user's wallet
   if (status === 'approved') {
     try {
-      // Fetch current price for conversion
-      const res = await fetch(
-        `https://api.coingecko.com/api/v3/simple/price?ids=${deposit.coin_symbol.toLowerCase() === 'btc' ? 'bitcoin' : deposit.coin_symbol.toLowerCase() === 'eth' ? 'ethereum' : deposit.coin_symbol.toLowerCase() === 'sol' ? 'solana' : 'tether'}&vs_currencies=usd`,
-        { next: { revalidate: 0 } }
-      );
-      const priceData = await res.json();
-      const coinId = deposit.coin_symbol.toLowerCase() === 'btc' ? 'bitcoin' : deposit.coin_symbol.toLowerCase() === 'eth' ? 'ethereum' : deposit.coin_symbol.toLowerCase() === 'sol' ? 'solana' : 'tether';
-      const currentPrice = priceData[coinId]?.usd || 1;
-      
-      const coinAmount = deposit.amount_usd / currentPrice;
-
       // Update wallet
       const { data: existing } = await supabaseAdmin
         .from('wallets')

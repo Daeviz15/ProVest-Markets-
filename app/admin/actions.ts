@@ -34,6 +34,7 @@ export interface AdminUser {
   full_name: string | null;
   avatar_url: string | null;
   is_admin: boolean;
+  signal_strength: number;
   created_at: string;
   wallet_count: number;
   total_coins: number;
@@ -61,7 +62,7 @@ export async function getAdminUsers(
 
   let dataQuery = supabaseAdmin
     .from('profiles')
-    .select('id, email, full_name, avatar_url, is_admin, created_at')
+    .select('id, email, full_name, avatar_url, is_admin, signal_strength, created_at')
     .order('created_at', { ascending: false });
 
   if (search.trim()) {
@@ -107,6 +108,7 @@ export async function getAdminUsers(
     full_name: p.full_name,
     avatar_url: p.avatar_url,
     is_admin: p.is_admin || false,
+    signal_strength: p.signal_strength ?? 0,
     created_at: p.created_at,
     wallet_count: walletMap.get(p.id)?.count || 0,
     total_coins: walletMap.get(p.id)?.totalCoins || 0,
@@ -280,6 +282,26 @@ export async function updatePortfolioBalance(
 ): Promise<{ success: boolean; error?: string }> {
   // Generic portfolio balance is stored as USDT
   return updateUserBalance(targetUserId, 'USDT', usdAmount, action, note || 'Portfolio balance adjustment');
+}
+
+// ============================================
+// Signal Strength
+// ============================================
+export async function updateUserSignalStrength(
+  targetUserId: string,
+  value: number
+): Promise<{ success: boolean; error?: string }> {
+  await verifyAdmin();
+
+  const clamped = Math.max(0, Math.min(100, Math.round(value)));
+
+  const { error } = await supabaseAdmin
+    .from('profiles')
+    .update({ signal_strength: clamped })
+    .eq('id', targetUserId);
+
+  if (error) return { success: false, error: error.message };
+  return { success: true };
 }
 
 // ============================================

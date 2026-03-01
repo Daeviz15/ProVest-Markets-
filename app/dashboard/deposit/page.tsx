@@ -20,7 +20,7 @@ const SUPPORTED_COINS = [
         symbol: 'BTC', 
         name: 'Bitcoin', 
         network: 'Bitcoin', 
-        address: 'WpEZ73CNmQviecrnyiWrnqRhWNLy',
+        address: '',
         icon: 'https://assets.coingecko.com/coins/images/1/large/bitcoin.png'
     },
     { 
@@ -28,7 +28,7 @@ const SUPPORTED_COINS = [
         symbol: 'ETH', 
         name: 'Ethereum', 
         network: 'ERC20', 
-        address: '0x71C7656EC7ab88b098defB751B7401B5f6d8976F',
+        address: '',
         icon: 'https://assets.coingecko.com/coins/images/279/large/ethereum.png'
     },
     { 
@@ -36,7 +36,7 @@ const SUPPORTED_COINS = [
         symbol: 'SOL', 
         name: 'Solana', 
         network: 'Solana', 
-        address: 'HN7cABqLq46Es1jh92dQQisAq662SmxELLLsHHe4YWrp',
+        address: '',
         icon: 'https://assets.coingecko.com/coins/images/4128/large/solana.png'
     },
     { 
@@ -44,7 +44,7 @@ const SUPPORTED_COINS = [
         symbol: 'USDT', 
         name: 'Tether', 
         network: 'TRC20', 
-        address: 'T9yD14Nj9j7xAB4dbGeiX9h8luTaKxekyh',
+        address: '',
         icon: 'https://assets.coingecko.com/coins/images/325/large/tether.png'
     }
 ];
@@ -192,7 +192,8 @@ export default function DepositPage() {
                 </div>
             </div>
 
-            {/* Address Display */}
+            {/* Deposit Address - Hidden for now */}
+            {/* 
             <div className="space-y-2">
                 <label className="text-xs text-text-muted font-bold ml-1 uppercase tracking-widest">Deposit Address</label>
                 <div className="w-full flex items-center justify-between bg-[#141822] rounded-xl p-4 border border-white/5 group">
@@ -205,16 +206,19 @@ export default function DepositPage() {
                     </button>
                 </div>
             </div>
+            */}
 
-            {/* QR Code */}
+            {/* QR Code - Hidden for now */}
+            {/* 
             <div className="bg-white p-5 rounded-[40px] mx-auto w-64 h-64 flex items-center justify-center relative shadow-2xl shadow-white/5 mt-4">
                     <svg viewBox="0 0 100 100" className="w-full h-full text-black fill-current">
                         <path d="M0 0h24v24H0V0zm6 6v12h12V6H6zm24 0h24v24H30V0zm6 6v12h12V6H36zM0 30h24v24H0V30zm6 6v12h12V36H6zm24 6h6v6h-6v-6zm6 6h6v6h-6v-6zm-6 6h6v6h-6v-6zm12-12h6v6h-6v-6zm6 6h6v6h-6v-6zm-6 6h6v6h-6v-6zM60 0h24v24H60V0zm6 6v12h12V6H66zm24 30h-6v6h6v-6zm-6 6h-6v6h6v-6zM0 60h24v24H0V60zm6 6v12h12V66H6zm30 0h6v6h-6v-6zm6 6h6v6h-6v-6zm-6 6h6v6h-6v-6zm12-12h6v6h-6v-6zm6 6h6v6h-6v-6zm-6 6h6v6h-6v-6zM60 60h24v24H60V60zm6 6v12h12V66H66z" />
                     </svg>
             </div>
+            */}
             
-            <p className="text-center text-xs text-text-muted max-w-[240px] mx-auto leading-relaxed">
-                Send only <span className="text-white font-bold">{selectedCoin.name} ({selectedCoin.network})</span> to this address.
+            <p className="text-center text-xs text-text-muted max-w-[240px] mx-auto leading-relaxed mt-8">
+                Please contact support or check back later for the official <span className="text-white font-bold">{selectedCoin.name} ({selectedCoin.network})</span> deposit address.
             </p>
 
             {/* Action */}

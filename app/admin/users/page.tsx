@@ -5,12 +5,12 @@ import { motion, AnimatePresence } from 'motion/react';
 import {
   Users, Wallet, TrendingUp, Clock,
   X, Plus, Minus, Replace, Search,
-  ChevronLeft, ChevronRight, DollarSign, Coins, ChevronDown, RefreshCw
+  ChevronLeft, ChevronRight, DollarSign, Coins, ChevronDown, RefreshCw, Signal
 } from 'lucide-react';
 import AdminSidebar from '../components/AdminSidebar';
 import AdminTopbar from '../components/AdminTopbar';
 import {
-  getAdminUsers, getUserWallets, getUserPortfolioValue, getAdminMarketData, updateUserBalance, updatePortfolioBalance, getAdminStats,
+  getAdminUsers, getUserWallets, getUserPortfolioValue, getAdminMarketData, updateUserBalance, updatePortfolioBalance, getAdminStats, updateUserSignalStrength,
   type AdminUser, type UserWallet, type AdminStats,
 } from '../actions';
 
@@ -123,6 +123,18 @@ function BalanceModal({
   const [portfolioValue, setPortfolioValue] = useState<number | null>(null);
   const [marketData, setMarketData] = useState<any[]>([]);
   const [refreshing, setRefreshing] = useState(false);
+  const [signalValue, setSignalValue] = useState(user.signal_strength ?? 0);
+  const [signalSaving, setSignalSaving] = useState(false);
+
+  const handleSignalChange = async (val: number) => {
+    setSignalValue(val);
+    setSignalSaving(true);
+    const result = await updateUserSignalStrength(user.id, val);
+    if (!result.success) {
+      setFeedback({ type: 'error', msg: result.error || 'Failed to update signal strength' });
+    }
+    setSignalSaving(false);
+  };
 
   // Fetch real portfolio value and market data for dropdown/conversion
   useEffect(() => {
@@ -255,6 +267,36 @@ function BalanceModal({
           <button onClick={onClose} className="p-2 text-text-muted hover:text-white rounded-xl hover:bg-white/5 transition-all">
             <X size={18} />
           </button>
+        </div>
+
+        {/* Signal Strength Control */}
+        <div className="px-6 py-4 border-b border-white/[0.06] shrink-0">
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-2">
+              <Signal size={14} className="text-blue-400" />
+              <span className="text-[10px] font-bold text-text-muted uppercase tracking-widest">Signal Strength</span>
+            </div>
+            <span className={`text-sm font-bold font-mono ${
+              signalValue >= 70 ? 'text-dash-accent' : signalValue >= 40 ? 'text-yellow-400' : 'text-dash-error'
+            }`}>
+              {signalValue}%
+              {signalSaving && <span className="ml-1 text-[10px] text-text-muted">saving...</span>}
+            </span>
+          </div>
+          <input
+            type="range"
+            min="0"
+            max="100"
+            step="1"
+            value={signalValue}
+            onChange={(e) => setSignalValue(Number(e.target.value))}
+            onMouseUp={(e) => handleSignalChange(Number((e.target as HTMLInputElement).value))}
+            onTouchEnd={(e) => handleSignalChange(Number((e.target as HTMLInputElement).value))}
+            className="w-full h-2 rounded-full appearance-none cursor-pointer"
+            style={{
+              background: `linear-gradient(to right, ${signalValue >= 70 ? '#10b981' : signalValue >= 40 ? '#eab308' : '#ef4444'} 0%, ${signalValue >= 70 ? '#10b981' : signalValue >= 40 ? '#eab308' : '#ef4444'} ${signalValue}%, rgba(255,255,255,0.06) ${signalValue}%, rgba(255,255,255,0.06) 100%)`,
+            }}
+          />
         </div>
 
         {/* Tabs */}

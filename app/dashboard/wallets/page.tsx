@@ -11,7 +11,8 @@ import {
   Wallet,
   Send,
   Download,
-  History as HistoryIcon
+  History as HistoryIcon,
+  Signal
 } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -19,12 +20,14 @@ import { getMarkets, CoinMarketData } from '@/lib/crypto';
 import Sparkline from '../components/Sparkline';
 import { motion } from 'motion/react';
 import { useBalance } from '../context/BalanceContext';
+import { supabase } from '@/lib/supabase';
 
 export default function WalletPage() {
   const [coins, setCoins] = useState<CoinMarketData[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const { balances, getSymbolBalance, totalUsdBalance } = useBalance();
+  const [signalStrength, setSignalStrength] = useState<number | null>(null);
 
   useEffect(() => {
     const fetchAssets = async () => {
@@ -42,10 +45,33 @@ export default function WalletPage() {
     fetchAssets();
   }, []);
 
+  // Fetch signal strength from user profile
+  useEffect(() => {
+    const fetchSignal = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('signal_strength')
+          .eq('id', user.id)
+          .single();
+        if (profile) setSignalStrength(profile.signal_strength ?? 0);
+      } catch (err) {
+        console.error('Failed to fetch signal strength:', err);
+      }
+    };
+    fetchSignal();
+  }, []);
+
   const filteredCoins = coins.filter(c => 
     c.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
     c.symbol.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  const signalColor = signalStrength !== null
+    ? signalStrength >= 70 ? '#10b981' : signalStrength >= 40 ? '#eab308' : '#ef4444'
+    : '#10b981';
 
   return (
     <div className="space-y-6 sm:space-y-8 max-w-[1600px] mx-auto pb-12 font-outfit px-3 sm:px-4 lg:px-6">
@@ -103,6 +129,34 @@ export default function WalletPage() {
               </div>
           </div>
       </div>
+
+      {/* Signal Strength Bar */}
+      {signalStrength !== null && (
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-[#0C101A] border border-white/[0.06] rounded-2xl p-5"
+        >
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <Signal size={16} className="text-blue-400" />
+              <span className="text-sm font-bold text-white">Signal Strength</span>
+            </div>
+            <span className="text-sm font-bold font-mono" style={{ color: signalColor }}>
+              {signalStrength}%
+            </span>
+          </div>
+          <div className="w-full h-2 bg-white/[0.06] rounded-full overflow-hidden">
+            <motion.div
+              initial={{ width: 0 }}
+              animate={{ width: `${signalStrength}%` }}
+              transition={{ duration: 1, ease: 'easeOut' }}
+              className="h-full rounded-full"
+              style={{ backgroundColor: signalColor }}
+            />
+          </div>
+        </motion.div>
+      )}
 
       {/* Asset List Section */}
       <div className="space-y-4">
