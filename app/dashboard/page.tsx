@@ -7,6 +7,7 @@ import BalanceChart from './components/BalanceChart';
 import MarketsOverview from './components/MarketsOverview';
 import QuickTrade from './components/QuickTrade';
 import PaymentHistory from './components/PaymentHistory';
+import BalanceActionsWidget from './components/BalanceActionsWidget';
 import { useBalance } from './context/BalanceContext';
 
 export default function DashboardPage() {
@@ -16,6 +17,9 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-8 max-w-[1400px] mx-auto pb-12">
+      {/* New Balance Actions Widget */}
+      <BalanceActionsWidget />
+
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         
         {/* Analytics Section (Main Balance) */}
