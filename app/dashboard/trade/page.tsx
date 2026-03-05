@@ -24,6 +24,7 @@ import { useNotification } from '../context/NotificationContext';
 import { useLoading } from '../context/LoadingContext';
 import { supabase } from '@/lib/supabase';
 import { useUser } from '../context/UserContext';
+import { formatCurrency, getCurrencySymbol } from '@/lib/currency';
 import { useSearchParams } from 'next/navigation';
 import { Suspense } from 'react';
 
@@ -41,7 +42,7 @@ function TradeContent() {
   const [activeTab, setActiveTab] = useState<'buy' | 'sell'>('buy');
   const [tradeAmount, setTradeAmount] = useState('');
   const { setIsLoading } = useLoading();
-  const { totalUsdBalance, balances, getSymbolBalance, refreshBalances } = useBalance();
+  const { totalBalance, balances, getSymbolBalance, refreshBalances, currency } = useBalance();
   const { addNotification } = useNotification();
   const { user } = useUser();
 
@@ -49,7 +50,7 @@ function TradeContent() {
     const loadCoins = async () => {
       setLoading(true);
       try {
-        const data = await getTopCoins(100);
+        const data = await getTopCoins(100, currency);
         setCoins(data);
         
         if (coinIdFromUrl) {
@@ -96,7 +97,7 @@ function TradeContent() {
     }
 
     if (activeTab === 'buy') {
-        if (totalUsdBalance < amount) {
+        if (totalBalance < amount) {
             setShowDepositGuard(true);
             return;
         }
@@ -260,7 +261,7 @@ function TradeContent() {
                                     {coin.price_change_percentage_24h >= 0 ? '+' : ''}{coin.price_change_percentage_24h?.toFixed(2)}%
                                 </p>
                               </div>
-                              <p className="text-white/60 font-bold text-xs mt-1 font-mono">${coin.current_price.toLocaleString()}</p>
+                              <p className="text-white/60 font-bold text-xs mt-1 font-mono">{formatCurrency(coin.current_price, currency)}</p>
                           </div>
                       </motion.div>
                   ))
@@ -281,7 +282,7 @@ function TradeContent() {
                         </div>
                         <div>
                             <div className="flex items-center gap-3">
-                                <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white tracking-tight font-outfit">{selectedCoin?.symbol.toUpperCase()} / USD</h2>
+                                <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white tracking-tight font-outfit">{selectedCoin?.symbol.toUpperCase()} / {currency.toUpperCase()}</h2>
                                 <div className={`flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-bold border ${
                                     (selectedCoin?.price_change_percentage_24h || 0) >= 0 
                                       ? 'bg-dash-accent/10 text-dash-accent border-dash-accent/20' 
@@ -409,7 +410,7 @@ function TradeContent() {
                             <div className="flex justify-between items-center px-1">
                                 <label className="text-[10px] text-text-muted uppercase tracking-[0.2em] font-bold">Trading Amount</label>
                                 <span className="text-[11px] font-mono text-text-muted/60">
-                                    Balance: ${activeTab === 'buy' ? totalUsdBalance.toLocaleString() : (getSymbolBalance(selectedCoin?.symbol || '') * (selectedCoin?.current_price || 0)).toLocaleString()}
+                                    Balance: {activeTab === 'buy' ? formatCurrency(totalBalance, currency) : formatCurrency(getSymbolBalance(selectedCoin?.symbol || '') * (selectedCoin?.current_price || 0), currency)}
                                 </span>
                             </div>
                             <div className="relative group">
@@ -420,7 +421,7 @@ function TradeContent() {
                                     onChange={(e) => setTradeAmount(e.target.value)}
                                     className="w-full bg-[#141822] border border-white/5 rounded-xl sm:rounded-2xl py-3 px-4 sm:py-4 sm:px-6 md:py-5 md:px-8 text-lg sm:text-xl md:text-2xl font-bold text-white outline-none focus:border-dash-accent/40 focus:bg-white/[0.04] transition-all font-mono"
                                 />
-                                <span className="absolute right-8 top-1/2 -translate-y-1/2 font-bold text-white/20 text-sm group-focus-within:text-dash-accent transition-colors tracking-widest">USD</span>
+                                <span className="absolute right-8 top-1/2 -translate-y-1/2 font-bold text-white/20 text-sm group-focus-within:text-dash-accent transition-colors tracking-widest">{currency.toUpperCase()}</span>
                             </div>
                         </div>
 

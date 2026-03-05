@@ -10,6 +10,7 @@ import { useNotification } from '../context/NotificationContext';
 import { supabase } from '@/lib/supabase';
 import { useUser } from '../context/UserContext';
 import { useLoading } from '../context/LoadingContext';
+import { getCurrencySymbol, formatCurrency } from '@/lib/currency';
 
 export default function QuickTrade() {
   const [side, setSide] = useState('buy');
@@ -18,12 +19,12 @@ export default function QuickTrade() {
   const [receiveCoin, setReceiveCoin] = useState<CoinMarketData | null>(null);
   const [amount, setAmount] = useState<string>('');
   const [loading, setLoading] = useState(true);
-  const { getSymbolBalance, refreshBalances, totalUsdBalance } = useBalance();
+  const { getSymbolBalance, refreshBalances, totalBalance, currency } = useBalance();
   const { addNotification } = useNotification();
   const { user } = useUser();
   const { setIsLoading } = useLoading();
 
-  const currentBalance = side === 'buy' ? totalUsdBalance : (spendCoin ? getSymbolBalance(spendCoin.symbol) : 0);
+  const currentBalance = side === 'buy' ? totalBalance : (spendCoin ? getSymbolBalance(spendCoin.symbol) : 0);
 
   useEffect(() => {
     const loadCoins = async () => {
@@ -131,7 +132,7 @@ export default function QuickTrade() {
             <div className="flex justify-between text-[11px] text-text-muted uppercase font-space tracking-wider px-1">
                 <span>{side === 'buy' ? 'Spend' : 'Sell'}</span>
                 <div className="flex items-center gap-2">
-                    <span>Balance: {side === 'buy' ? '$' : ''}{currentBalance.toLocaleString(undefined, { maximumFractionDigits: side === 'buy' ? 2 : 6 })}</span>
+                    <span>Balance: {side === 'buy' ? getCurrencySymbol(currency) : ''}{currentBalance.toLocaleString(undefined, { maximumFractionDigits: side === 'buy' ? 2 : 6 })}</span>
                     <Link href="/dashboard/wallets" className="text-dash-accent hover:text-white flex items-center gap-0.5 transition-colors">
                         Portfolio <ArrowUpRight size={10} />
                     </Link>

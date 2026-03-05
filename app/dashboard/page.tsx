@@ -8,15 +8,19 @@ import MarketsOverview from './components/MarketsOverview';
 import QuickTrade from './components/QuickTrade';
 import PaymentHistory from './components/PaymentHistory';
 import BalanceActionsWidget from './components/BalanceActionsWidget';
+import Greeting from './components/Greeting';
 import { useBalance } from './context/BalanceContext';
 
 export default function DashboardPage() {
-  const { totalUsdBalance } = useBalance();
+  const { totalBalance, currency } = useBalance();
   const [selectedCoin, setSelectedCoin] = useState({ id: 'bitcoin', symbol: 'btc', name: 'Bitcoin' });
   const [timeRange, setTimeRange] = useState('7'); // days
 
   return (
     <div className="space-y-8 max-w-[1400px] mx-auto pb-12">
+      {/* Personalized Greeting */}
+      <Greeting />
+
       {/* New Balance Actions Widget */}
       <BalanceActionsWidget />
 
@@ -35,7 +39,7 @@ export default function DashboardPage() {
               </p>
               <div className="flex items-baseline gap-3">
                 <h2 className="text-3xl sm:text-4xl font-bold text-white font-outfit tracking-tight">
-                    {selectedCoin.symbol.toUpperCase()} / USD
+                    {selectedCoin.symbol.toUpperCase()} / {currency.toUpperCase()}
                 </h2>
                 <span className="text-dash-accent text-sm font-bold bg-dash-accent/10 px-2 py-1 rounded-lg flex items-center gap-1">
                   <TrendingUp size={12} /> Live

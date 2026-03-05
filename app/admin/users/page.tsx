@@ -5,12 +5,12 @@ import { motion, AnimatePresence } from 'motion/react';
 import {
   Users, Wallet, TrendingUp, Clock,
   X, Plus, Minus, Replace, Search,
-  ChevronLeft, ChevronRight, DollarSign, Coins, ChevronDown, RefreshCw, Signal
+  ChevronLeft, ChevronRight, DollarSign, Coins, ChevronDown, RefreshCw, Signal, Globe
 } from 'lucide-react';
 import AdminSidebar from '../components/AdminSidebar';
 import AdminTopbar from '../components/AdminTopbar';
 import {
-  getAdminUsers, getUserWallets, getUserPortfolioValue, getAdminMarketData, updateUserBalance, updatePortfolioBalance, getAdminStats, updateUserSignalStrength,
+  getAdminUsers, getUserWallets, getUserPortfolioValue, getAdminMarketData, updateUserBalance, updatePortfolioBalance, getAdminStats, updateUserSignalStrength, updateUserCurrency,
   type AdminUser, type UserWallet, type AdminStats,
 } from '../actions';
 
@@ -101,6 +101,55 @@ function Pagination({
   );
 }
 
+const fiatCurrencies = [
+  { code: 'usd', label: 'US Dollar', symbol: '$' },
+  { code: 'eur', label: 'Euro', symbol: '€' },
+  { code: 'gbp', label: 'British Pound', symbol: '£' },
+  { code: 'jpy', label: 'Japanese Yen', symbol: '¥' },
+  { code: 'ngn', label: 'Nigerian Naira', symbol: '₦' },
+  { code: 'inr', label: 'Indian Rupee', symbol: '₹' },
+  { code: 'aed', label: 'UAE Dirham', symbol: 'د.إ' },
+  { code: 'ars', label: 'Argentine Peso', symbol: '$' },
+  { code: 'aud', label: 'Australian Dollar', symbol: 'A$' },
+  { code: 'bdt', label: 'Bangladeshi Taka', symbol: '৳' },
+  { code: 'bhd', label: 'Bahraini Dinar', symbol: '.د.ب' },
+  { code: 'bmd', label: 'Bermudian Dollar', symbol: '$' },
+  { code: 'brl', label: 'Brazilian Real', symbol: 'R$' },
+  { code: 'cad', label: 'Canadian Dollar', symbol: 'C$' },
+  { code: 'chf', label: 'Swiss Franc', symbol: 'Fr.' },
+  { code: 'clp', label: 'Chilean Peso', symbol: '$' },
+  { code: 'cny', label: 'Chinese Yuan', symbol: '¥' },
+  { code: 'czk', label: 'Czech Koruna', symbol: 'Kč' },
+  { code: 'dkk', label: 'Danish Krone', symbol: 'kr' },
+  { code: 'gel', label: 'Georgian Lari', symbol: '₾' },
+  { code: 'hkd', label: 'Hong Kong Dollar', symbol: 'HK$' },
+  { code: 'huf', label: 'Hungarian Forint', symbol: 'Ft' },
+  { code: 'idr', label: 'Indonesian Rupiah', symbol: 'Rp' },
+  { code: 'ils', label: 'Israeli Shekel', symbol: '₪' },
+  { code: 'krw', label: 'South Korean Won', symbol: '₩' },
+  { code: 'kwd', label: 'Kuwaiti Dinar', symbol: 'د.ك' },
+  { code: 'lkr', label: 'Sri Lankan Rupee', symbol: 'Rs' },
+  { code: 'mmk', label: 'Burmese Kyat', symbol: 'K' },
+  { code: 'mxn', label: 'Mexican Peso', symbol: '$' },
+  { code: 'myr', label: 'Malaysian Ringgit', symbol: 'RM' },
+  { code: 'nok', label: 'Norwegian Krone', symbol: 'kr' },
+  { code: 'nzd', label: 'New Zealand Dollar', symbol: 'NZ$' },
+  { code: 'php', label: 'Philippine Peso', symbol: '₱' },
+  { code: 'pkr', label: 'Pakistani Rupee', symbol: 'Rs' },
+  { code: 'pln', label: 'Polish Zloty', symbol: 'zł' },
+  { code: 'rub', label: 'Russian Ruble', symbol: '₽' },
+  { code: 'sar', label: 'Saudi Riyal', symbol: 'ر.س' },
+  { code: 'sek', label: 'Swedish Krona', symbol: 'kr' },
+  { code: 'sgd', label: 'Singapore Dollar', symbol: 'S$' },
+  { code: 'thb', label: 'Thai Baht', symbol: '฿' },
+  { code: 'try', label: 'Turkish Lira', symbol: '₺' },
+  { code: 'twd', label: 'Taiwan Dollar', symbol: 'NT$' },
+  { code: 'uah', label: 'Ukrainian Hryvnia', symbol: '₴' },
+  { code: 'vef', label: 'Venezuelan Bolívar', symbol: 'Bs' },
+  { code: 'vnd', label: 'Vietnamese Dong', symbol: '₫' },
+  { code: 'zar', label: 'South African Rand', symbol: 'R' },
+];
+
 // ============================================
 // Balance Modal — Tabbed (Portfolio + Coins)
 // ============================================
@@ -125,6 +174,20 @@ function BalanceModal({
   const [refreshing, setRefreshing] = useState(false);
   const [signalValue, setSignalValue] = useState(user.signal_strength ?? 0);
   const [signalSaving, setSignalSaving] = useState(false);
+  const [userCurrency, setUserCurrency] = useState(user.preferred_currency || 'usd');
+  const [currencySaving, setCurrencySaving] = useState(false);
+
+  const handleCurrencyChange = async (val: string) => {
+    setUserCurrency(val);
+    setCurrencySaving(true);
+    const result = await updateUserCurrency(user.id, val);
+    if (!result.success) {
+      setFeedback({ type: 'error', msg: result.error || 'Failed to update user currency' });
+    } else {
+      onRefresh(); // Refresh user list to show new currency
+    }
+    setCurrencySaving(false);
+  };
 
   const handleSignalChange = async (val: number) => {
     setSignalValue(val);
@@ -297,6 +360,33 @@ function BalanceModal({
               background: `linear-gradient(to right, ${signalValue >= 70 ? '#10b981' : signalValue >= 40 ? '#eab308' : '#ef4444'} 0%, ${signalValue >= 70 ? '#10b981' : signalValue >= 40 ? '#eab308' : '#ef4444'} ${signalValue}%, rgba(255,255,255,0.06) ${signalValue}%, rgba(255,255,255,0.06) 100%)`,
             }}
           />
+        </div>
+
+        {/* Preferred Currency Control */}
+        <div className="px-6 py-4 border-b border-white/[0.06] shrink-0 bg-white/[0.02]">
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-2">
+              <Globe size={14} className="text-dash-accent" />
+              <span className="text-[10px] font-bold text-text-muted uppercase tracking-widest">Preferred Currency</span>
+            </div>
+            {currencySaving && <span className="text-[10px] text-dash-accent animate-pulse font-bold uppercase tracking-tighter">Saving...</span>}
+          </div>
+          <div className="relative group">
+            <select
+              value={userCurrency.toLowerCase()}
+              onChange={(e) => handleCurrencyChange(e.target.value)}
+              className="w-full bg-[#161C2A] border border-white/[0.06] rounded-xl py-3 px-4 text-white text-sm outline-none focus:border-dash-accent/30 transition-all font-mono appearance-none cursor-pointer relative z-10"
+            >
+              {fiatCurrencies.map((curr) => (
+                <option key={curr.code} value={curr.code} className="bg-[#161C2A] text-white py-2">
+                  {curr.label} ({curr.code.toUpperCase()}) — {curr.symbol}
+                </option>
+              ))}
+            </select>
+            <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-text-muted">
+              <ChevronDown size={14} />
+            </div>
+          </div>
         </div>
 
         {/* Tabs */}

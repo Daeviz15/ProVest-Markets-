@@ -12,7 +12,8 @@ interface Wallet {
 
 interface BalanceContextType {
     balances: Wallet[];
-    totalUsdBalance: number;
+    totalBalance: number;
+    currency: string;
     loading: boolean;
     getSymbolBalance: (symbol: string) => number;
     refreshBalances: () => Promise<void>;
@@ -21,23 +22,25 @@ interface BalanceContextType {
 const BalanceContext = createContext<BalanceContextType | undefined>(undefined);
 
 export function BalanceProvider({ children }: { children: React.ReactNode }) {
-    const { user } = useUser();
+    const { user, profile } = useUser();
     const [balances, setBalances] = useState<Wallet[]>([]);
-    const [totalUsdBalance, setTotalUsdBalance] = useState(0);
+    const [totalBalance, setTotalBalance] = useState(0);
     const [loading, setLoading] = useState(true);
+
+    const currency = profile?.preferred_currency || 'usd';
 
     const calculateTotal = useCallback((wallets: Wallet[], marketData: CoinMarketData[]) => {
         const total = wallets.reduce((acc, curr) => {
             const coin = marketData.find(c => c.symbol.toLowerCase() === curr.coin_symbol.toLowerCase());
             return acc + (curr.balance * (coin?.current_price || 0));
         }, 0);
-        setTotalUsdBalance(total);
+        setTotalBalance(total);
     }, []);
 
     const fetchBalances = useCallback(async () => {
         if (!user) {
             setBalances([]);
-            setTotalUsdBalance(0);
+            setTotalBalance(0);
             setLoading(false);
             return;
         }
@@ -45,7 +48,7 @@ export function BalanceProvider({ children }: { children: React.ReactNode }) {
         try {
             const [walletRes, marketRes] = await Promise.all([
                 supabase.from('wallets').select('coin_symbol, balance').eq('user_id', user.id),
-                getTopCoins(100)
+                getTopCoins(100, currency)
             ]);
 
             if (walletRes.error) throw walletRes.error;
@@ -97,7 +100,7 @@ export function BalanceProvider({ children }: { children: React.ReactNode }) {
     };
 
     return (
-        <BalanceContext.Provider value={{ balances, totalUsdBalance, loading, getSymbolBalance, refreshBalances }}>
+        <BalanceContext.Provider value={{ balances, totalBalance, currency, loading, getSymbolBalance, refreshBalances }}>
             {children}
         </BalanceContext.Provider>
     );

@@ -4,24 +4,26 @@ import Image from 'next/image';
 import { useSidebar } from '../context/SidebarContext';
 import { useUser } from '../context/UserContext';
 import { useBalance } from '../context/BalanceContext';
+import { formatCurrency } from '@/lib/currency';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'motion/react';
 import { getTopCoins, CoinMarketData } from '@/lib/crypto';
 import { useRouter } from 'next/navigation';
+import CurrencySelector from './CurrencySelector';
 
 export default function Topbar() {
   const router = useRouter();
   const { toggle } = useSidebar();
-  const { user } = useUser();
-  const { totalUsdBalance } = useBalance();
+  const { user, profile } = useUser();
+  const { totalBalance, currency } = useBalance();
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<CoinMarketData[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [showResults, setShowResults] = useState(false);
   const searchRef = useRef<HTMLDivElement>(null);
 
-  const fullName = user?.user_metadata?.full_name || "David Ukata";
-  const avatarUrl = user?.user_metadata?.avatar_url || "/nft-one.png";
+  const fullName = profile?.full_name || user?.user_metadata?.full_name || "David Ukata";
+  const avatarUrl = profile?.avatar_url || user?.user_metadata?.avatar_url || "/nft-one.png";
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -174,9 +176,9 @@ export default function Topbar() {
       {/* Right Actions */}
       <div className="flex items-center gap-2 sm:gap-6">
         <div className="flex flex-col items-end pr-2 sm:pr-4 border-r border-dash-border/30">
-            <span className="text-[8px] sm:text-[9px] text-text-muted font-bold uppercase tracking-[0.15em] mb-0.5 sm:mb-1 opacity-60 hidden xs:block">Balance</span>
+            <span className="text-[8px] sm:text-[9px] text-text-muted font-bold uppercase tracking-[0.15em] mb-0.5 sm:mb-1 opacity-60 hidden xs:block">Portfolio</span>
             <span className="text-xs sm:text-base font-bold text-white font-mono tracking-tight">
-                ${totalUsdBalance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                {formatCurrency(totalBalance, currency)}
             </span>
         </div>
 
@@ -187,6 +189,11 @@ export default function Topbar() {
             <span className="hidden sm:inline">Wallet</span>
           </button>
         </Link>
+
+        {/* Currency Selector */}
+        <div className="hidden sm:block">
+            <CurrencySelector />
+        </div>
 
         {/* Profile */}
         <Link href="/dashboard/profile" className="flex items-center gap-2 sm:gap-3 pl-1 sm:pl-2 cursor-pointer group">

@@ -45,16 +45,16 @@ async function fetchWithCache(urlParams: string) {
   }
 }
 
-export async function getMarkets(page = 1, perPage = 10, order = 'market_cap_desc'): Promise<CoinMarketData[]> {
-  const params = `endpoint=markets&page=${page}&per_page=${perPage}&order=${order}`;
+export async function getMarkets(page = 1, perPage = 10, order = 'market_cap_desc', currency = 'usd'): Promise<CoinMarketData[]> {
+  const params = `endpoint=markets&page=${page}&per_page=${perPage}&order=${order}&vs_currency=${currency}`;
   return fetchWithCache(params);
 }
 
-export async function getCoinHistory(id: string, days = 7): Promise<{ prices: [number, number][] }> {
-  const params = `endpoint=history&id=${id}&days=${days}`;
+export async function getCoinHistory(id: string, days = 7, currency = 'usd'): Promise<{ prices: [number, number][] }> {
+  const params = `endpoint=history&id=${id}&days=${days}&vs_currency=${currency}`;
   return fetchWithCache(params);
 }
 
-export async function getTopCoins(count = 50): Promise<CoinMarketData[]> {
-  return getMarkets(1, count);
+export async function getTopCoins(count = 50, currency = 'usd'): Promise<CoinMarketData[]> {
+  return getMarkets(1, count, 'market_cap_desc', currency);
 }

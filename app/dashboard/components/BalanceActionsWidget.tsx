@@ -5,9 +5,10 @@ import { motion } from 'motion/react';
 import { ArrowDownLeft, Send, RefreshCw, ArrowDown } from 'lucide-react';
 import Link from 'next/link';
 import { useBalance } from '../context/BalanceContext';
+import { formatCurrency } from '@/lib/currency';
 
 export default function BalanceActionsWidget() {
-  const { totalUsdBalance, loading } = useBalance();
+  const { totalBalance, currency, loading } = useBalance();
 
   const actions = [
     { label: 'Deposit', icon: ArrowDownLeft, href: '/dashboard/deposit' },
@@ -28,7 +29,7 @@ export default function BalanceActionsWidget() {
         </h3>
         <div className="flex items-baseline gap-2">
           <h2 className="text-5xl font-bold text-white font-outfit tracking-tighter">
-            ${loading ? '...' : totalUsdBalance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            {loading ? '...' : formatCurrency(totalBalance, currency)}
           </h2>
         </div>
       </div>

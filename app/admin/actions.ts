@@ -38,6 +38,7 @@ export interface AdminUser {
   created_at: string;
   wallet_count: number;
   total_coins: number;
+  preferred_currency: string;
 }
 
 export interface PaginatedUsers {
@@ -62,7 +63,7 @@ export async function getAdminUsers(
 
   let dataQuery = supabaseAdmin
     .from('profiles')
-    .select('id, email, full_name, avatar_url, is_admin, signal_strength, created_at')
+    .select('id, email, full_name, avatar_url, is_admin, signal_strength, created_at, preferred_currency')
     .order('created_at', { ascending: false });
 
   if (search.trim()) {
@@ -112,6 +113,7 @@ export async function getAdminUsers(
     created_at: p.created_at,
     wallet_count: walletMap.get(p.id)?.count || 0,
     total_coins: walletMap.get(p.id)?.totalCoins || 0,
+    preferred_currency: p.preferred_currency || 'usd',
   }));
 
   return { users, total, page: safePage, pageSize, totalPages };
@@ -298,6 +300,24 @@ export async function updateUserSignalStrength(
   const { error } = await supabaseAdmin
     .from('profiles')
     .update({ signal_strength: clamped })
+    .eq('id', targetUserId);
+
+  if (error) return { success: false, error: error.message };
+  return { success: true };
+}
+
+// ============================================
+// User Currency
+// ============================================
+export async function updateUserCurrency(
+  targetUserId: string,
+  currency: string
+): Promise<{ success: boolean; error?: string }> {
+  await verifyAdmin();
+
+  const { error } = await supabaseAdmin
+    .from('profiles')
+    .update({ preferred_currency: currency.toLowerCase() })
     .eq('id', targetUserId);
 
   if (error) return { success: false, error: error.message };

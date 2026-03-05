@@ -6,6 +6,8 @@ import Image from 'next/image';
 import { getMarkets, CoinMarketData } from '@/lib/crypto';
 import { CoinSkeleton } from './CoinSkeleton';
 import { AlertCircle, ChevronRight, ChevronLeft } from 'lucide-react';
+import { useBalance } from '../context/BalanceContext';
+import { formatCurrency } from '@/lib/currency';
 
 export default function MarketsOverview({ 
   onCoinSelect, 
@@ -19,6 +21,7 @@ export default function MarketsOverview({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [page, setPage] = useState(1);
+  const { currency } = useBalance();
 
   useEffect(() => {
     const fetchCoins = async () => {
@@ -26,7 +29,7 @@ export default function MarketsOverview({
       setError(null);
       try {
         const order = activeTab === 'popular' ? 'market_cap_desc' : 'volume_desc';
-        const data = await getMarkets(page, 5, order);
+        const data = await getMarkets(page, 5, order, currency);
         setCoins(data);
       } catch (err: any) {
         setError(err.message || 'Failed to fetch data');
@@ -149,7 +152,7 @@ export default function MarketsOverview({
                   
                   <div className="text-right">
                     <p className="text-sm font-bold text-white font-outfit">
-                        ${coin.current_price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 4 })}
+                        {formatCurrency(coin.current_price, currency)}
                     </p>
                     <p className={`text-[11px] font-bold ${coin.price_change_percentage_24h >= 0 ? 'text-dash-accent' : 'text-dash-error'}`}>
                       {coin.price_change_percentage_24h >= 0 ? '+' : ''}{coin.price_change_percentage_24h?.toFixed(2)}%

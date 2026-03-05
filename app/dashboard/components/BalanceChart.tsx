@@ -3,6 +3,8 @@
 import React, { useEffect, useState } from 'react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { getCoinHistory } from '@/lib/crypto';
+import { useBalance } from '../context/BalanceContext';
+import { formatCurrency } from '@/lib/currency';
 
 export default function BalanceChart({ 
   coinId = 'bitcoin', 
@@ -13,12 +15,13 @@ export default function BalanceChart({
 }) {
   const [data, setData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const { currency } = useBalance();
 
   useEffect(() => {
     const fetchHistory = async () => {
       setLoading(true);
       try {
-        const history = await getCoinHistory(coinId, parseInt(days));
+        const history = await getCoinHistory(coinId, parseInt(days), currency);
         // Map [timestamp, price] to { time, value }
         const formattedData = history.prices.map(([time, price]: [number, number]) => {
             const date = new Date(time);
@@ -95,7 +98,7 @@ export default function BalanceChart({
             itemStyle={{ color: 'var(--dash-accent)', fontWeight: 700 }}
             labelStyle={{ display: 'none' }}
             cursor={{ stroke: 'var(--dash-accent)', strokeWidth: 1, strokeDasharray: '4 4' }}
-            formatter={(val: any) => [`$${Number(val).toLocaleString(undefined, { minimumFractionDigits: 2 })}`, 'Price']}
+            formatter={(val: any) => [formatCurrency(Number(val), currency), 'Price']}
           />
           <Area 
             type="monotone" 

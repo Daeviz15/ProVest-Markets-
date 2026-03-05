@@ -9,8 +9,9 @@ CREATE TABLE IF NOT EXISTS public.profiles (
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- Ensure signal_strength column exists even if table was already created
+-- Ensure signal_strength and preferred_currency columns exist
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS signal_strength INTEGER DEFAULT 0 CHECK (signal_strength >= 0 AND signal_strength <= 100);
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS preferred_currency TEXT DEFAULT 'usd';
 
 -- Enable RLS
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;

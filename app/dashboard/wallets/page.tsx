@@ -21,12 +21,13 @@ import Sparkline from '../components/Sparkline';
 import { motion } from 'motion/react';
 import { useBalance } from '../context/BalanceContext';
 import { supabase } from '@/lib/supabase';
+import { formatCurrency, getCurrencySymbol } from '@/lib/currency';
 
 export default function WalletPage() {
   const [coins, setCoins] = useState<CoinMarketData[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
-  const { balances, getSymbolBalance, totalUsdBalance } = useBalance();
+  const { balances, getSymbolBalance, totalBalance, currency } = useBalance();
   const [signalStrength, setSignalStrength] = useState<number | null>(null);
 
   useEffect(() => {
@@ -97,7 +98,7 @@ export default function WalletPage() {
           
           <div className="relative z-10 text-center sm:text-left">
               <h2 className="text-4xl sm:text-5xl font-bold text-white tracking-tight mb-8 drop-shadow-sm font-mono">
-                ${totalUsdBalance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                {formatCurrency(totalBalance, currency)}
               </h2>
               
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 max-w-3xl">
@@ -217,7 +218,7 @@ export default function WalletPage() {
                                   {/* Mobile Balance (Right aligned on mobile row) */}
                                   <div className="text-right md:hidden">
                                       <p className="text-white font-bold text-base font-mono">{balance.toFixed(4)}</p>
-                                      <p className="text-text-muted text-xs font-medium">${balanceUsd.toFixed(2)}</p>
+                                      <p className="text-text-muted text-xs font-medium">{formatCurrency(balanceUsd, currency)}</p>
                                   </div>
                               </div>
 
@@ -231,9 +232,9 @@ export default function WalletPage() {
                               </div>
 
                               {/* Desktop Balance */}
-                              <div className="hidden md:block col-span-4 text-right">
+                               <div className="hidden md:block col-span-4 text-right">
                                   <p className="text-white font-bold text-lg font-mono tracking-tight">{balance.toFixed(6)}</p>
-                                  <p className="text-text-muted text-sm font-medium font-mono opacity-60">${balanceUsd.toLocaleString(undefined, { minimumFractionDigits: 2 })}</p>
+                                  <p className="text-text-muted text-sm font-medium font-mono opacity-60">{formatCurrency(balanceUsd, currency)}</p>
                               </div>
                           </motion.div>
                       );

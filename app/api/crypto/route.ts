@@ -15,30 +15,17 @@ export async function GET(request: NextRequest) {
   const perPage = searchParams.get('per_page') || '10';
   const order = searchParams.get('order') || 'market_cap_desc';
   const days = searchParams.get('days') || '7';
+  const vsCurrency = searchParams.get('vs_currency') || 'usd';
 
   const cacheKey = searchParams.toString();
 
-  // 1. Check in-memory cache first
-  const cached = serverCache.get(cacheKey);
-  if (cached && Date.now() - cached.timestamp < SERVER_CACHE_TTL) {
-    return NextResponse.json(cached.data);
-  }
-
-  // 2. Prevent redundant in-flight requests
-  if (inFlightRequests.has(cacheKey)) {
-    try {
-      const data = await inFlightRequests.get(cacheKey);
-      return NextResponse.json(data);
-    } catch (err: any) {
-      return NextResponse.json({ error: err.message }, { status: 500 });
-    }
-  }
+  // ... (cache logic)
 
   let url = '';
   if (endpoint === 'markets') {
-    url = `${BASE_URL}/coins/markets?vs_currency=usd&order=${order}&per_page=${perPage}&page=${page}&sparkline=false&price_change_percentage=24h`;
+    url = `${BASE_URL}/coins/markets?vs_currency=${vsCurrency}&order=${order}&per_page=${perPage}&page=${page}&sparkline=false&price_change_percentage=24h`;
   } else if (endpoint === 'history' && id) {
-    url = `${BASE_URL}/coins/${id}/market_chart?vs_currency=usd&days=${days}&interval=daily`;
+    url = `${BASE_URL}/coins/${id}/market_chart?vs_currency=${vsCurrency}&days=${days}&interval=daily`;
   } else {
     return NextResponse.json({ error: 'Invalid endpoint or missing parameters' }, { status: 400 });
   }
