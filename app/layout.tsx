@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Script from "next/script";
 import { Inter, Outfit, Space_Grotesk, Pacifico } from "next/font/google";
 import "./globals.css";
 
@@ -52,7 +53,22 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${inter.variable} ${outfit.variable} ${spaceGrotesk.variable} ${pacifico.variable} antialiased`}>{children}</body>
+      <body className={`${inter.variable} ${outfit.variable} ${spaceGrotesk.variable} ${pacifico.variable} antialiased`}>
+        {children}
+        <Script id="smartsupp-chat" strategy="afterInteractive">
+          {`
+            var _smartsupp = _smartsupp || {};
+            _smartsupp.key = 'f695e78c5b5a2cd29d17f6da7cd9c5c3a03273bc';
+            window.smartsupp||(function(d) {
+              var s,c,o=smartsupp=function(){ o._.push(arguments)};o._=[];
+              s=d.getElementsByTagName('script')[0];c=d.createElement('script');
+              c.type='text/javascript';c.charset='utf-8';c.async=true;
+              c.src='https://www.smartsuppchat.com/loader.js?';s.parentNode.insertBefore(c,s);
+            })(document);
+          `}
+        </Script>
+        <noscript>Powered by <a href="https://www.smartsupp.com" target="_blank">Smartsupp</a></noscript>
+      </body>
     </html>
   );
 }
